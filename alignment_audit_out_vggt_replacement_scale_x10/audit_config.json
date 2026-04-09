@@ -1,0 +1,23 @@
+{
+  "data_dir": "/mnt/ssd/ziyaochen/GraspClutter6D/offline_unified",
+  "camera": "realsense-d415",
+  "batch_size": 2,
+  "num_batches": 4,
+  "graspnet_ckpt": "/home/ziyaochen/graspnet-baseline/logs/log_rs/checkpoint-rs.tar",
+  "graspnet_root": "/home/ziyaochen/graspnet-baseline",
+  "device": "cuda",
+  "out_dir": "/home/ziyaochen/gc6d_grasp_pipeline/alignment_audit_out_vggt_replacement_scale_x10",
+  "seed": 42,
+  "ckpt_pure": null,
+  "ckpt_vggt_rep": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/vggt_replacement_scale_x10/vggt_replacement_scale_x10_vggt_replacement_20260331_205825.pt",
+  "ckpt_l3clip": null,
+  "ckpt_l3dino": null,
+  "ckpt_vggt_fuse": null,
+  "resolved_checkpoints": {
+    "pure_graspnet": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/exp_pure/exp_pure_pure_graspnet_20260328_163000.pt",
+    "vggt_replacement": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/vggt_replacement_scale_x10/vggt_replacement_scale_x10_vggt_replacement_20260331_205825.pt",
+    "lift3d_replacement_clip": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/exp_l3clip_rep/exp_l3clip_rep_lift3d_replacement_clip_20260328_164446.pt",
+    "lift3d_replacement_dinov2": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/exp_l3dino_rep/exp_l3dino_rep_lift3d_replacement_dinov2_20260328_164455.pt",
+    "vggt_fusion_normalized": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/exp_vggt_fuse_norm/exp_vggt_fuse_norm_vggt_fusion_normalized_20260328_163119.pt"
+  }
+}

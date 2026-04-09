@@ -1,0 +1,18 @@
+{
+  "eval_mode": "eval_scene_per_scene_extra_stats",
+  "dump_dir": "/home/ziyaochen/gc6d_grasp_pipeline/eval_out_rewrite/vggt_distill_enc_lora_vggt_replacement_distill_20260405_225722",
+  "gc6d_root": "/mnt/ssd/ziyaochen/GraspClutter6D",
+  "camera": "realsense-d435",
+  "top_k": 50,
+  "background_filter": true,
+  "collision_thresh": 0.01,
+  "voxel_size": 0.01,
+  "num_point": 20000,
+  "depth_scale": 1000.0,
+  "repro_aligned": true,
+  "AP": 0.0,
+  "AP0.4": 0.0,
+  "AP0.8": 0.0,
+  "graspnet_ckpt": "/home/ziyaochen/graspnet-baseline/logs/log_rs/checkpoint-rs.tar",
+  "pipeline_checkpoint": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/vggt_distill_enc_lora/vggt_distill_enc_lora_vggt_replacement_distill_20260405_225722.pt"
+}

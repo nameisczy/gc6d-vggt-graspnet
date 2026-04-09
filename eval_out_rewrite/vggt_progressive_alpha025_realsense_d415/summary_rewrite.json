@@ -1,0 +1,20 @@
+{
+  "eval_mode": "eval_scene_per_scene_extra_stats",
+  "dump_dir": "/home/ziyaochen/gc6d_grasp_pipeline/eval_out_rewrite/vggt_progressive_alpha025_realsense_d415",
+  "gc6d_root": "/mnt/ssd/ziyaochen/GraspClutter6D",
+  "camera": "realsense-d415",
+  "top_k": 50,
+  "background_filter": true,
+  "collision_thresh": 0.01,
+  "voxel_size": 0.01,
+  "num_point": 20000,
+  "depth_scale": 1000.0,
+  "repro_aligned": true,
+  "AP": 15.1721,
+  "AP0.4": 12.5106,
+  "AP0.8": 18.1766,
+  "graspnet_ckpt": "/home/ziyaochen/graspnet-baseline/logs/log_rs/checkpoint-rs.tar",
+  "pipeline_checkpoint": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/vggt_progressive_alpha025/vggt_progressive_alpha025_vggt_progressive_replacement_<YYYYMMDD_HHMMSS>.pt",
+  "top50_collision_remaining_rate": 0.2962,
+  "top50_force_closure_success_count_mean": 8.59
+}

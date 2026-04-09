@@ -1,0 +1,156 @@
+{
+  "pure_graspnet": {
+    "graspnet_backbone": {
+      "trainable_numel": 0,
+      "frozen_numel": 641856,
+      "trainable_params": 0,
+      "frozen_params": 48
+    },
+    "graspnet_head": {
+      "trainable_numel": 148080,
+      "frozen_numel": 0,
+      "trainable_params": 29,
+      "frozen_params": 0
+    },
+    "graspnet_vpmodule": {
+      "trainable_numel": 236028,
+      "frozen_numel": 0,
+      "trainable_params": 10,
+      "frozen_params": 0
+    }
+  },
+  "vggt_replacement": {
+    "encoder": {
+      "trainable_numel": 0,
+      "frozen_numel": 1268476724,
+      "trainable_params": 0,
+      "frozen_params": 2579
+    },
+    "graspnet_backbone": {
+      "trainable_numel": 0,
+      "frozen_numel": 641856,
+      "trainable_params": 0,
+      "frozen_params": 48
+    },
+    "graspnet_head": {
+      "trainable_numel": 148080,
+      "frozen_numel": 0,
+      "trainable_params": 29,
+      "frozen_params": 0
+    },
+    "graspnet_vpmodule": {
+      "trainable_numel": 236028,
+      "frozen_numel": 0,
+      "trainable_params": 10,
+      "frozen_params": 0
+    },
+    "other": {
+      "trainable_numel": 513,
+      "frozen_numel": 0,
+      "trainable_params": 3,
+      "frozen_params": 0
+    },
+    "replacement_projector": {
+      "trainable_numel": 262656,
+      "frozen_numel": 0,
+      "trainable_params": 4,
+      "frozen_params": 0
+    }
+  },
+  "lift3d_replacement_clip": {
+    "encoder": {
+      "trainable_numel": 0,
+      "frozen_numel": 87846336,
+      "trainable_params": 0,
+      "frozen_params": 310
+    },
+    "graspnet_backbone": {
+      "trainable_numel": 0,
+      "frozen_numel": 641856,
+      "trainable_params": 0,
+      "frozen_params": 48
+    },
+    "graspnet_head": {
+      "trainable_numel": 148080,
+      "frozen_numel": 0,
+      "trainable_params": 29,
+      "frozen_params": 0
+    },
+    "graspnet_vpmodule": {
+      "trainable_numel": 236028,
+      "frozen_numel": 0,
+      "trainable_params": 10,
+      "frozen_params": 0
+    },
+    "replacement_projector": {
+      "trainable_numel": 262656,
+      "frozen_numel": 0,
+      "trainable_params": 4,
+      "frozen_params": 0
+    }
+  },
+  "lift3d_replacement_dinov2": {
+    "encoder": {
+      "trainable_numel": 0,
+      "frozen_numel": 86580480,
+      "trainable_params": 0,
+      "frozen_params": 175
+    },
+    "graspnet_backbone": {
+      "trainable_numel": 0,
+      "frozen_numel": 641856,
+      "trainable_params": 0,
+      "frozen_params": 48
+    },
+    "graspnet_head": {
+      "trainable_numel": 148080,
+      "frozen_numel": 0,
+      "trainable_params": 29,
+      "frozen_params": 0
+    },
+    "graspnet_vpmodule": {
+      "trainable_numel": 236028,
+      "frozen_numel": 0,
+      "trainable_params": 10,
+      "frozen_params": 0
+    },
+    "replacement_projector": {
+      "trainable_numel": 262656,
+      "frozen_numel": 0,
+      "trainable_params": 4,
+      "frozen_params": 0
+    }
+  },
+  "vggt_fusion_normalized": {
+    "encoder": {
+      "trainable_numel": 0,
+      "frozen_numel": 1268476724,
+      "trainable_params": 0,
+      "frozen_params": 2579
+    },
+    "fusion_modules": {
+      "trainable_numel": 461312,
+      "frozen_numel": 0,
+      "trainable_params": 10,
+      "frozen_params": 0
+    },
+    "graspnet_backbone": {
+      "trainable_numel": 0,
+      "frozen_numel": 641856,
+      "trainable_params": 0,
+      "frozen_params": 48
+    },
+    "graspnet_head": {
+      "trainable_numel": 148080,
+      "frozen_numel": 0,
+      "trainable_params": 29,
+      "frozen_params": 0
+    },
+    "graspnet_vpmodule": {
+      "trainable_numel": 236028,
+      "frozen_numel": 0,
+      "trainable_params": 10,
+      "frozen_params": 0
+    }
+  }
+}

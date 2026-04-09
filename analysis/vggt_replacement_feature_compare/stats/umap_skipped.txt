@@ -1,0 +1,1 @@
+umap-learn 未安装或运行失败，已跳过 umap2d.png

@@ -1,0 +1,12 @@
+{
+  "lift3d_seed_to_graspnet_seed_ridge": {
+    "mse": 8.45885214210126e+112,
+    "cosine_global": 0.07259957334006144,
+    "fro_W": 4.5258678397002384e+57
+  },
+  "lift3d_seed_to_graspnet_seed_ridge_normalized": {
+    "mse": 2.8625907142939615e+99,
+    "cosine_global": 0.0019106217270794307,
+    "fro_W": 9.526670551272945e+50
+  }
+}

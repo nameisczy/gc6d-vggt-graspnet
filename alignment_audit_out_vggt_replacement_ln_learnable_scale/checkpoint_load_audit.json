@@ -1,0 +1,72 @@
+{
+  "pure_graspnet": {
+    "path": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/exp_pure/exp_pure_pure_graspnet_20260328_163000.pt",
+    "model_class_name": "PureGraspNetPipeline",
+    "ckpt_model_mode": "pure_graspnet",
+    "ckpt_encoder_type": "pure_graspnet",
+    "state_dict_num_keys": 162,
+    "load_strict_false": {
+      "strict": false,
+      "missing_keys": [],
+      "unexpected_keys": [],
+      "n_missing": 0,
+      "n_unexpected": 0
+    }
+  },
+  "vggt_replacement": {
+    "path": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/vggt_replacement_ln_learnable_scale/vggt_replacement_ln_learnable_scale_vggt_replacement_20260331_205812.pt",
+    "model_class_name": "VGGTReplacementGraspNet",
+    "ckpt_model_mode": "vggt_replacement",
+    "ckpt_encoder_type": "vggt_replacement",
+    "state_dict_num_keys": 2748,
+    "load_strict_false": {
+      "strict": false,
+      "missing_keys": [],
+      "unexpected_keys": [],
+      "n_missing": 0,
+      "n_unexpected": 0
+    }
+  },
+  "lift3d_replacement_clip": {
+    "path": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/exp_l3clip_rep/exp_l3clip_rep_lift3d_replacement_clip_20260328_164446.pt",
+    "model_class_name": "Lift3DClipReplacementGraspNet",
+    "ckpt_model_mode": "lift3d_replacement_clip",
+    "ckpt_encoder_type": "lift3d_clip_replacement",
+    "state_dict_num_keys": 503,
+    "load_strict_false": {
+      "strict": false,
+      "missing_keys": [],
+      "unexpected_keys": [],
+      "n_missing": 0,
+      "n_unexpected": 0
+    }
+  },
+  "lift3d_replacement_dinov2": {
+    "path": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/exp_l3dino_rep/exp_l3dino_rep_lift3d_replacement_dinov2_20260328_164455.pt",
+    "model_class_name": "Dinov2ReplacementGraspNet",
+    "ckpt_model_mode": "lift3d_replacement_dinov2",
+    "ckpt_encoder_type": "dinov2_replacement",
+    "state_dict_num_keys": 341,
+    "load_strict_false": {
+      "strict": false,
+      "missing_keys": [],
+      "unexpected_keys": [],
+      "n_missing": 0,
+      "n_unexpected": 0
+    }
+  },
+  "vggt_fusion_normalized": {
+    "path": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/exp_vggt_fuse_norm/exp_vggt_fuse_norm_vggt_fusion_normalized_20260328_163119.pt",
+    "model_class_name": "VGGTFusionNormalizedGraspNet",
+    "ckpt_model_mode": "vggt_fusion_normalized",
+    "ckpt_encoder_type": "vggt_fusion_normalized",
+    "state_dict_num_keys": 2751,
+    "load_strict_false": {
+      "strict": false,
+      "missing_keys": [],
+      "unexpected_keys": [],
+      "n_missing": 0,
+      "n_unexpected": 0
+    }
+  }
+}

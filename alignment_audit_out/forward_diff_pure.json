@@ -1,0 +1,35 @@
+{
+  "grasp_net_weight_diff_vs_fresh_pretrained": {
+    "backbone_view_estimator_backbone": {
+      "prefix": "view_estimator.backbone",
+      "n_tensors": 96,
+      "mean_of_mean_abs_diff": 2014.1803589876508,
+      "max_of_mean_abs_diff": 12080.0
+    },
+    "vpmodule": {
+      "prefix": "view_estimator.vpmodule",
+      "n_tensors": 16,
+      "mean_of_mean_abs_diff": 1510.8389520961791,
+      "max_of_mean_abs_diff": 12080.0
+    },
+    "grasp_generator": {
+      "prefix": "grasp_generator",
+      "n_tensors": 50,
+      "mean_of_mean_abs_diff": 1693.0287423828154,
+      "max_of_mean_abs_diff": 12080.0
+    },
+    "all_tensors_summary": {
+      "n_tensors": 162,
+      "mean_of_mean_abs_diff": 1865.346758120334
+    }
+  },
+  "per_batch_mean_abs_diff_seed_features": [
+    0.2735481858253479,
+    0.2698117792606354,
+    0.25380784273147583,
+    0.263675719499588
+  ],
+  "note": "alignment 训练后 pure_graspnet 仅训 head（vpmodule+grasp_generator），backbone 冻结；seed_features 应对齐预训练 backbone；若 seed_features 差异大则说明 load 或 forward 异常。",
+  "seed_features_mean_abs_diff_mean": 0.2652108818292618,
+  "seed_features_max_abs_diff_mean": 5.77490496635437
+}

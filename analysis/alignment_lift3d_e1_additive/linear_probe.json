@@ -1,0 +1,12 @@
+{
+  "cond_expand_to_graspnet_seed_ridge": {
+    "mse": 1.4442635776076501e+181,
+    "cosine_global": 0.5001194674298646,
+    "fro_W": 2.8142777651186194e+92
+  },
+  "cond_expand_to_graspnet_seed_ridge_normalized": {
+    "mse": 1.9213145047520468e+194,
+    "cosine_global": -0.004700899418786603,
+    "fro_W": 2.641620491318799e+98
+  }
+}
