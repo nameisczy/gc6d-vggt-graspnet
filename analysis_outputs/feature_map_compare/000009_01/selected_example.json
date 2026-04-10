@@ -1,0 +1,47 @@
+{
+  "scene_id": 9,
+  "ann_id": 1,
+  "camera": "realsense-d415",
+  "npz_path": "/mnt/ssd/ziyaochen/GraspClutter6D/lift3d_offline/samples/000009_000001_realsense-d415.npz",
+  "rgb_path": "",
+  "score": 18.941607848722985,
+  "summary": {
+    "scene_id": 9,
+    "ann_id": 1,
+    "camera": "realsense-d415",
+    "npz_path": "/mnt/ssd/ziyaochen/GraspClutter6D/lift3d_offline/samples/000009_000001_realsense-d415.npz",
+    "rgb_path": "",
+    "combined_score": 18.941607848722985,
+    "clutter_score": 17.0,
+    "occlusion_score": 0.913798827389504,
+    "n_grasp_gt": 0,
+    "detail": {
+      "mask_mode": "ok",
+      "n_scene_gt_objects": 17,
+      "per_object_visibility_ratio": [
+        1.000121317140379,
+        0.9948270287606683,
+        0.35660803325770096,
+        0.9939552430621917,
+        0.46767275336634617,
+        0.6442903145794023,
+        0.14395416503752725,
+        0.4606913322831216,
+        0.9947512980473558,
+        0.6581085796571061,
+        0.98808207390416,
+        0.9924153536292148,
+        0.9997652719715242,
+        0.6678772617844515,
+        0.7194288690676285,
+        1.0002097755139445,
+        0.9900378438991503
+      ],
+      "n_grasp_gt": 0,
+      "pc_spread_p95": 0.2850254848599434,
+      "mode": "npz_fallback",
+      "selection_note": "full_criteria"
+    },
+    "index_source": "/mnt/ssd/ziyaochen/GraspClutter6D/lift3d_offline/index_validation_realsense-d415.cleaned.jsonl"
+  }
+}

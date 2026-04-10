@@ -1,0 +1,12 @@
+{
+  "n_requested": 2048,
+  "rng_seed": 0,
+  "depth_attempt": {
+    "img_id": 5,
+    "num_points_raw": 940005,
+    "source": "depth_backproject"
+  },
+  "num_source_points": 940005,
+  "scene_id": 9,
+  "ann_id": 1
+}

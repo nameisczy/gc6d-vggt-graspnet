@@ -1,0 +1,36 @@
+{
+    "vggt_raw": {
+      "type": "pretrained"
+    },
+    "lift3d_clip_raw": {
+      "type": "pretrained"
+    },
+    "lift3d_dinov2_raw": {
+      "type": "pretrained"
+    },
+  
+    "vggt_progressive_alpha05": {
+      "type": "checkpoint",
+      "path": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/vggt_progressive_alpha050/vggt_progressive_alpha050_vggt_progressive_replacement_20260403_095331.pt"
+    },
+    "vggt_distill": {
+      "type": "checkpoint",
+      "path": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/vggt_replacement_distill_w1_t0/vggt_replacement_distill_w1_t0_vggt_replacement_distill_20260403_094600.pt"
+    },
+    "vggt_fusion_progressive_alpha05": {
+      "type": "checkpoint",
+      "path": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/vggt_prog_fusion_a050/vggt_prog_fusion_a050_vggt_progressive_fusion_20260408_064227.pt"
+    },
+    "vggt_prog_enc_lora": {
+      "type": "checkpoint",
+      "path": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/vggt_prog_enc_lora/vggt_prog_enc_lora_vggt_progressive_replacement_20260407_085526.pt"
+    },
+    "lift3d_clip_progressive_alpha05": {
+      "type": "checkpoint",
+      "path": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/lift3d_clip_prog_a025/lift3d_clip_prog_a025_lift3d_clip_progressive_replacement_20260405_214827.pt"
+    },
+    "lift3d_dinov2_progressive_alpha05": {
+      "type": "checkpoint",
+      "path": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/dinov2_prog_a050/dinov2_prog_a050_dinov2_progressive_replacement_20260405_214901.pt"
+    }
+  }

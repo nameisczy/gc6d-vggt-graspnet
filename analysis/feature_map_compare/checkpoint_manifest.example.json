@@ -1,0 +1,33 @@
+{
+  "graspnet_backbone": "/home/ziyaochen/graspnet-baseline/logs/log_rs/checkpoint-rs.tar",
+  "vggt_raw": {
+    "type": "pretrained"
+  },
+  "vggt_progressive_alpha05": {
+    "type": "checkpoint",
+    "path": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/YOUR_RUN/vggt_progressive_alpha05.pt"
+  },
+  "vggt_distill": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/YOUR_RUN/vggt_distill.pt",
+  "vggt_fusion_progressive_alpha05": {
+    "type": "checkpoint",
+    "path": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/YOUR_RUN/vggt_fusion_progressive_alpha05.pt"
+  },
+  "vggt_prog_enc_lora": {
+    "type": "checkpoint",
+    "path": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/YOUR_RUN/vggt_prog_enc_lora.pt"
+  },
+  "lift3d_clip_raw": {
+    "type": "pretrained"
+  },
+  "lift3d_clip_progressive_alpha05": {
+    "type": "checkpoint",
+    "path": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/YOUR_RUN/lift3d_clip_progressive_alpha05.pt"
+  },
+  "lift3d_dinov2_raw": {
+    "type": "pretrained"
+  },
+  "lift3d_dinov2_progressive_alpha05": {
+    "type": "checkpoint",
+    "path": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/YOUR_RUN/lift3d_dinov2_progressive_alpha05.pt"
+  }
+}

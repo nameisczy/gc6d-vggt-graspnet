@@ -1,0 +1,14 @@
+{
+  "data_dir": "/mnt/ssd/ziyaochen/GraspClutter6D/lift3d_offline",
+  "dataset_root": "/mnt/ssd/ziyaochen/GraspClutter6D",
+  "split": "val",
+  "camera": "realsense-d415",
+  "index_jsonl": "index_validation_realsense-d415.cleaned.jsonl",
+  "checkpoint_manifest": "/home/ziyaochen/gc6d_grasp_pipeline/manifest.json",
+  "graspnet_ckpt": "/home/ziyaochen/graspnet-baseline/logs/log_rs/checkpoint-rs.tar",
+  "pc_num_points": 2048,
+  "pc_seed": 0,
+  "vggt_feature_mode": "dense768",
+  "vggt_dense_max_points": 80000,
+  "grasp_dist_threshold": 0.02
+}

@@ -158,6 +158,21 @@ def _positive_mask_from_gt(
     return d_min <= float(pos_dist_thresh)
 
 
+def _zero_ranking_loss_with_grad(final_score: torch.Tensor, reranker: Optional[torch.nn.Module]) -> torch.Tensor:
+    """
+    无可采样 pair 时仍需返回与 reranker 相连的标量，否则 backward 报
+    'element 0 of tensors does not require grad and does not have a grad_fn'。
+    """
+    z = final_score.sum() * 0.0
+    if z.requires_grad or z.grad_fn is not None:
+        return z
+    if reranker is not None:
+        for p in reranker.parameters():
+            if p.requires_grad and p.numel() > 0:
+                return p.flatten()[0] * 0.0
+    return z
+
+
 def pairwise_ranking_hinge_loss(
     final_score: torch.Tensor,
     pos_mask: torch.Tensor,
@@ -165,6 +180,7 @@ def pairwise_ranking_hinge_loss(
     margin: float = 0.1,
     neg_samples_per_pos: int = 3,
     max_pairs: int = 2048,
+    reranker: Optional[torch.nn.Module] = None,
 ) -> torch.Tensor:
     """
     final_score: (B, K)
@@ -173,7 +189,8 @@ def pairwise_ranking_hinge_loss(
     """
     device = final_score.device
     B, K = final_score.shape
-    total_loss = final_score.new_zeros(())
+    # 与 final_score 同图上的零标量，避免「无 pair 时 new_zeros 断图」
+    total_loss = final_score.sum() * 0.0
     pair_count = 0
     max_pairs = int(max_pairs)
 
@@ -195,7 +212,7 @@ def pairwise_ranking_hinge_loss(
                 if pair_count >= max_pairs:
                     return total_loss / max(pair_count, 1)
     if pair_count == 0:
-        return final_score.new_zeros(())
+        return _zero_ranking_loss_with_grad(final_score, reranker)
     return total_loss / float(pair_count)
 
 
@@ -264,6 +281,7 @@ def reranker_ranking_loss_from_endpoints(
         margin=margin,
         neg_samples_per_pos=neg_samples_per_pos,
         max_pairs=max_pairs,
+        reranker=reranker,
     )
     n_pos = int(pos_mask.sum().item())
     log = {

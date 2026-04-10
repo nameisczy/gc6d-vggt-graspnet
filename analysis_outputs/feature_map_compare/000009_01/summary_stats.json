@@ -1,0 +1,1209 @@
+{
+  "per_model": {
+    "graspnet_backbone": {
+      "l2_norm_mean": 7.748074531555176,
+      "l2_norm_std": 2.0165512561798096
+    },
+    "vggt_raw": {
+      "l2_norm_mean": 2.194425106048584,
+      "l2_norm_std": 0.07920882850885391
+    },
+    "vggt_progressive_alpha05": {
+      "l2_norm_mean": 2.246702194213867,
+      "l2_norm_std": 0.07537352293729782
+    },
+    "vggt_distill": {
+      "l2_norm_mean": 2.246702194213867,
+      "l2_norm_std": 0.07537352293729782
+    },
+    "vggt_fusion_progressive_alpha05": {
+      "l2_norm_mean": 2.246702194213867,
+      "l2_norm_std": 0.07537352293729782
+    },
+    "vggt_prog_enc_lora": {
+      "l2_norm_mean": 2.246702194213867,
+      "l2_norm_std": 0.07537352293729782
+    },
+    "lift3d_clip_raw": {
+      "l2_norm_mean": 3.138684034347534,
+      "l2_norm_std": 0.1670036017894745
+    },
+    "lift3d_clip_progressive_alpha05": {
+      "l2_norm_mean": 5.870577335357666,
+      "l2_norm_std": 1.4883652925491333
+    },
+    "lift3d_dinov2_raw": {
+      "l2_norm_mean": 5.952383995056152,
+      "l2_norm_std": 0.5434560179710388
+    },
+    "lift3d_dinov2_progressive_alpha05": {
+      "l2_norm_mean": 4.336020469665527,
+      "l2_norm_std": 0.9225976467132568
+    }
+  },
+  "top_k": 50,
+  "topk_indices": {
+    "graspnet_backbone": [
+      629,
+      44,
+      853,
+      1218,
+      685,
+      1562,
+      2031,
+      1109,
+      1531,
+      2040,
+      1245,
+      259,
+      299,
+      1886,
+      1663,
+      574,
+      474,
+      806,
+      1719,
+      961,
+      1000,
+      1415,
+      799,
+      56,
+      175,
+      1630,
+      1692,
+      1755,
+      1565,
+      1146,
+      358,
+      401,
+      372,
+      644,
+      969,
+      586,
+      235,
+      819,
+      1633,
+      68,
+      846,
+      989,
+      1084,
+      336,
+      836,
+      956,
+      1243,
+      1703,
+      1479,
+      1795
+    ],
+    "vggt_raw": [
+      1304,
+      409,
+      1558,
+      565,
+      1417,
+      1067,
+      889,
+      730,
+      1120,
+      1441,
+      138,
+      126,
+      430,
+      1754,
+      1865,
+      843,
+      1311,
+      954,
+      194,
+      1144,
+      18,
+      1371,
+      406,
+      1555,
+      217,
+      1245,
+      1678,
+      299,
+      1240,
+      1636,
+      1732,
+      1531,
+      824,
+      95,
+      1268,
+      1205,
+      603,
+      695,
+      100,
+      1606,
+      584,
+      1962,
+      1459,
+      392,
+      1035,
+      161,
+      810,
+      598,
+      1945,
+      1127
+    ],
+    "vggt_progressive_alpha05": [
+      430,
+      95,
+      1441,
+      1417,
+      194,
+      730,
+      1120,
+      1144,
+      100,
+      603,
+      1205,
+      217,
+      1636,
+      565,
+      138,
+      1067,
+      1531,
+      695,
+      18,
+      584,
+      126,
+      954,
+      1754,
+      1268,
+      1240,
+      392,
+      843,
+      1606,
+      1962,
+      1678,
+      406,
+      409,
+      1371,
+      1304,
+      889,
+      1555,
+      1732,
+      1865,
+      1311,
+      1245,
+      1035,
+      1459,
+      824,
+      299,
+      1558,
+      311,
+      598,
+      1945,
+      932,
+      810
+    ],
+    "vggt_distill": [
+      430,
+      95,
+      1441,
+      1417,
+      194,
+      730,
+      1120,
+      1144,
+      100,
+      603,
+      1205,
+      217,
+      1636,
+      565,
+      138,
+      1067,
+      1531,
+      695,
+      18,
+      584,
+      126,
+      954,
+      1754,
+      1268,
+      1240,
+      392,
+      843,
+      1606,
+      1962,
+      1678,
+      406,
+      409,
+      1371,
+      1304,
+      889,
+      1555,
+      1732,
+      1865,
+      1311,
+      1245,
+      1035,
+      1459,
+      824,
+      299,
+      1558,
+      311,
+      598,
+      1945,
+      932,
+      810
+    ],
+    "vggt_fusion_progressive_alpha05": [
+      430,
+      95,
+      1441,
+      1417,
+      194,
+      730,
+      1120,
+      1144,
+      100,
+      603,
+      1205,
+      217,
+      1636,
+      565,
+      138,
+      1067,
+      1531,
+      695,
+      18,
+      584,
+      126,
+      954,
+      1754,
+      1268,
+      1240,
+      392,
+      843,
+      1606,
+      1962,
+      1678,
+      406,
+      409,
+      1371,
+      1304,
+      889,
+      1555,
+      1732,
+      1865,
+      1311,
+      1245,
+      1035,
+      1459,
+      824,
+      299,
+      1558,
+      311,
+      598,
+      1945,
+      932,
+      810
+    ],
+    "vggt_prog_enc_lora": [
+      430,
+      95,
+      1441,
+      1417,
+      194,
+      730,
+      1120,
+      1144,
+      100,
+      603,
+      1205,
+      217,
+      1636,
+      565,
+      138,
+      1067,
+      1531,
+      695,
+      18,
+      584,
+      126,
+      954,
+      1754,
+      1268,
+      1240,
+      392,
+      843,
+      1606,
+      1962,
+      1678,
+      406,
+      409,
+      1371,
+      1304,
+      889,
+      1555,
+      1732,
+      1865,
+      1311,
+      1245,
+      1035,
+      1459,
+      824,
+      299,
+      1558,
+      311,
+      598,
+      1945,
+      932,
+      810
+    ],
+    "lift3d_clip_raw": [
+      291,
+      524,
+      1864,
+      189,
+      785,
+      164,
+      1826,
+      774,
+      1428,
+      1411,
+      1657,
+      1809,
+      1851,
+      1037,
+      1374,
+      1987,
+      22,
+      241,
+      307,
+      163,
+      1589,
+      1706,
+      649,
+      508,
+      1515,
+      1542,
+      1702,
+      561,
+      1504,
+      979,
+      419,
+      1113,
+      42,
+      1234,
+      43,
+      1485,
+      1483,
+      1195,
+      599,
+      366,
+      85,
+      1058,
+      1673,
+      1623,
+      1068,
+      1959,
+      482,
+      2029,
+      1640,
+      1214
+    ],
+    "lift3d_clip_progressive_alpha05": [
+      629,
+      44,
+      853,
+      1218,
+      685,
+      2031,
+      1562,
+      1663,
+      1886,
+      574,
+      1109,
+      1531,
+      2040,
+      259,
+      299,
+      1245,
+      799,
+      56,
+      474,
+      806,
+      1719,
+      961,
+      1000,
+      1415,
+      175,
+      1755,
+      1630,
+      1692,
+      1565,
+      1146,
+      969,
+      644,
+      586,
+      401,
+      372,
+      358,
+      956,
+      989,
+      235,
+      68,
+      846,
+      819,
+      336,
+      1084,
+      1633,
+      836,
+      1703,
+      1243,
+      1479,
+      1795
+    ],
+    "lift3d_dinov2_raw": [
+      1435,
+      1647,
+      1740,
+      995,
+      813,
+      1331,
+      936,
+      933,
+      982,
+      530,
+      1397,
+      590,
+      303,
+      398,
+      1361,
+      641,
+      1258,
+      139,
+      2013,
+      479,
+      454,
+      1693,
+      1836,
+      1362,
+      367,
+      1417,
+      1769,
+      748,
+      491,
+      901,
+      986,
+      1224,
+      1296,
+      790,
+      805,
+      1399,
+      1584,
+      15,
+      1164,
+      937,
+      1656,
+      1521,
+      1838,
+      457,
+      6,
+      159,
+      1958,
+      671,
+      1638,
+      890
+    ],
+    "lift3d_dinov2_progressive_alpha05": [
+      44,
+      629,
+      1218,
+      853,
+      685,
+      2031,
+      1562,
+      806,
+      1719,
+      961,
+      474,
+      1000,
+      1415,
+      1663,
+      1886,
+      574,
+      1245,
+      1109,
+      2040,
+      299,
+      259,
+      1531,
+      56,
+      799,
+      235,
+      1084,
+      68,
+      989,
+      1633,
+      956,
+      846,
+      836,
+      819,
+      336,
+      358,
+      1565,
+      1630,
+      1755,
+      175,
+      372,
+      1692,
+      401,
+      586,
+      644,
+      1146,
+      969,
+      1703,
+      1479,
+      1243,
+      1795
+    ]
+  },
+  "pairwise_topk_overlap": [
+    {
+      "a": "graspnet_backbone",
+      "b": "vggt_raw",
+      "overlap_ratio": 0.06
+    },
+    {
+      "a": "graspnet_backbone",
+      "b": "vggt_progressive_alpha05",
+      "overlap_ratio": 0.06
+    },
+    {
+      "a": "graspnet_backbone",
+      "b": "vggt_distill",
+      "overlap_ratio": 0.06
+    },
+    {
+      "a": "graspnet_backbone",
+      "b": "vggt_fusion_progressive_alpha05",
+      "overlap_ratio": 0.06
+    },
+    {
+      "a": "graspnet_backbone",
+      "b": "vggt_prog_enc_lora",
+      "overlap_ratio": 0.06
+    },
+    {
+      "a": "graspnet_backbone",
+      "b": "lift3d_clip_raw",
+      "overlap_ratio": 0.0
+    },
+    {
+      "a": "graspnet_backbone",
+      "b": "lift3d_clip_progressive_alpha05",
+      "overlap_ratio": 1.0
+    },
+    {
+      "a": "graspnet_backbone",
+      "b": "lift3d_dinov2_raw",
+      "overlap_ratio": 0.0
+    },
+    {
+      "a": "graspnet_backbone",
+      "b": "lift3d_dinov2_progressive_alpha05",
+      "overlap_ratio": 1.0
+    },
+    {
+      "a": "vggt_raw",
+      "b": "vggt_progressive_alpha05",
+      "overlap_ratio": 0.96
+    },
+    {
+      "a": "vggt_raw",
+      "b": "vggt_distill",
+      "overlap_ratio": 0.96
+    },
+    {
+      "a": "vggt_raw",
+      "b": "vggt_fusion_progressive_alpha05",
+      "overlap_ratio": 0.96
+    },
+    {
+      "a": "vggt_raw",
+      "b": "vggt_prog_enc_lora",
+      "overlap_ratio": 0.96
+    },
+    {
+      "a": "vggt_raw",
+      "b": "lift3d_clip_raw",
+      "overlap_ratio": 0.0
+    },
+    {
+      "a": "vggt_raw",
+      "b": "lift3d_clip_progressive_alpha05",
+      "overlap_ratio": 0.06
+    },
+    {
+      "a": "vggt_raw",
+      "b": "lift3d_dinov2_raw",
+      "overlap_ratio": 0.02
+    },
+    {
+      "a": "vggt_raw",
+      "b": "lift3d_dinov2_progressive_alpha05",
+      "overlap_ratio": 0.06
+    },
+    {
+      "a": "vggt_progressive_alpha05",
+      "b": "vggt_distill",
+      "overlap_ratio": 1.0
+    },
+    {
+      "a": "vggt_progressive_alpha05",
+      "b": "vggt_fusion_progressive_alpha05",
+      "overlap_ratio": 1.0
+    },
+    {
+      "a": "vggt_progressive_alpha05",
+      "b": "vggt_prog_enc_lora",
+      "overlap_ratio": 1.0
+    },
+    {
+      "a": "vggt_progressive_alpha05",
+      "b": "lift3d_clip_raw",
+      "overlap_ratio": 0.0
+    },
+    {
+      "a": "vggt_progressive_alpha05",
+      "b": "lift3d_clip_progressive_alpha05",
+      "overlap_ratio": 0.06
+    },
+    {
+      "a": "vggt_progressive_alpha05",
+      "b": "lift3d_dinov2_raw",
+      "overlap_ratio": 0.02
+    },
+    {
+      "a": "vggt_progressive_alpha05",
+      "b": "lift3d_dinov2_progressive_alpha05",
+      "overlap_ratio": 0.06
+    },
+    {
+      "a": "vggt_distill",
+      "b": "vggt_fusion_progressive_alpha05",
+      "overlap_ratio": 1.0
+    },
+    {
+      "a": "vggt_distill",
+      "b": "vggt_prog_enc_lora",
+      "overlap_ratio": 1.0
+    },
+    {
+      "a": "vggt_distill",
+      "b": "lift3d_clip_raw",
+      "overlap_ratio": 0.0
+    },
+    {
+      "a": "vggt_distill",
+      "b": "lift3d_clip_progressive_alpha05",
+      "overlap_ratio": 0.06
+    },
+    {
+      "a": "vggt_distill",
+      "b": "lift3d_dinov2_raw",
+      "overlap_ratio": 0.02
+    },
+    {
+      "a": "vggt_distill",
+      "b": "lift3d_dinov2_progressive_alpha05",
+      "overlap_ratio": 0.06
+    },
+    {
+      "a": "vggt_fusion_progressive_alpha05",
+      "b": "vggt_prog_enc_lora",
+      "overlap_ratio": 1.0
+    },
+    {
+      "a": "vggt_fusion_progressive_alpha05",
+      "b": "lift3d_clip_raw",
+      "overlap_ratio": 0.0
+    },
+    {
+      "a": "vggt_fusion_progressive_alpha05",
+      "b": "lift3d_clip_progressive_alpha05",
+      "overlap_ratio": 0.06
+    },
+    {
+      "a": "vggt_fusion_progressive_alpha05",
+      "b": "lift3d_dinov2_raw",
+      "overlap_ratio": 0.02
+    },
+    {
+      "a": "vggt_fusion_progressive_alpha05",
+      "b": "lift3d_dinov2_progressive_alpha05",
+      "overlap_ratio": 0.06
+    },
+    {
+      "a": "vggt_prog_enc_lora",
+      "b": "lift3d_clip_raw",
+      "overlap_ratio": 0.0
+    },
+    {
+      "a": "vggt_prog_enc_lora",
+      "b": "lift3d_clip_progressive_alpha05",
+      "overlap_ratio": 0.06
+    },
+    {
+      "a": "vggt_prog_enc_lora",
+      "b": "lift3d_dinov2_raw",
+      "overlap_ratio": 0.02
+    },
+    {
+      "a": "vggt_prog_enc_lora",
+      "b": "lift3d_dinov2_progressive_alpha05",
+      "overlap_ratio": 0.06
+    },
+    {
+      "a": "lift3d_clip_raw",
+      "b": "lift3d_clip_progressive_alpha05",
+      "overlap_ratio": 0.0
+    },
+    {
+      "a": "lift3d_clip_raw",
+      "b": "lift3d_dinov2_raw",
+      "overlap_ratio": 0.0
+    },
+    {
+      "a": "lift3d_clip_raw",
+      "b": "lift3d_dinov2_progressive_alpha05",
+      "overlap_ratio": 0.0
+    },
+    {
+      "a": "lift3d_clip_progressive_alpha05",
+      "b": "lift3d_dinov2_raw",
+      "overlap_ratio": 0.0
+    },
+    {
+      "a": "lift3d_clip_progressive_alpha05",
+      "b": "lift3d_dinov2_progressive_alpha05",
+      "overlap_ratio": 1.0
+    },
+    {
+      "a": "lift3d_dinov2_raw",
+      "b": "lift3d_dinov2_progressive_alpha05",
+      "overlap_ratio": 0.0
+    }
+  ],
+  "grasp_alignment_analysis": null,
+  "feature_norm_pearson": {
+    "model_names": [
+      "graspnet_backbone",
+      "lift3d_clip_progressive_alpha05",
+      "lift3d_clip_raw",
+      "lift3d_dinov2_progressive_alpha05",
+      "lift3d_dinov2_raw",
+      "vggt_distill",
+      "vggt_fusion_progressive_alpha05",
+      "vggt_prog_enc_lora",
+      "vggt_progressive_alpha05",
+      "vggt_raw"
+    ],
+    "matrix": [
+      [
+        1.0,
+        0.999799310835834,
+        0.3882469554212839,
+        0.9982015623287023,
+        0.07148440819756066,
+        0.2697455619841151,
+        0.2697455619841151,
+        0.2697455619841151,
+        0.2697455619841151,
+        0.27551797114982823
+      ],
+      [
+        0.999799310835834,
+        1.0,
+        0.38556360685984636,
+        0.9978944605238896,
+        0.07241008807390431,
+        0.26720567361228653,
+        0.26720567361228653,
+        0.26720567361228653,
+        0.26720567361228653,
+        0.2722724025955027
+      ],
+      [
+        0.3882469554212839,
+        0.38556360685984636,
+        1.0,
+        0.3842690795661221,
+        -0.3065630338494861,
+        0.35194039260996046,
+        0.35194039260996046,
+        0.35194039260996046,
+        0.35194039260996046,
+        0.3789012131275315
+      ],
+      [
+        0.9982015623287023,
+        0.9978944605238896,
+        0.3842690795661221,
+        1.0,
+        0.07789865991500776,
+        0.2678487340787732,
+        0.2678487340787732,
+        0.2678487340787732,
+        0.2678487340787732,
+        0.27445589793144165
+      ],
+      [
+        0.07148440819756066,
+        0.07241008807390431,
+        -0.3065630338494861,
+        0.07789865991500776,
+        1.0,
+        0.061049890293779455,
+        0.061049890293779455,
+        0.061049890293779455,
+        0.061049890293779455,
+        0.06592500857945865
+      ],
+      [
+        0.2697455619841151,
+        0.26720567361228653,
+        0.35194039260996046,
+        0.2678487340787732,
+        0.061049890293779455,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.9767088332258171
+      ],
+      [
+        0.2697455619841151,
+        0.26720567361228653,
+        0.35194039260996046,
+        0.2678487340787732,
+        0.061049890293779455,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.9767088332258171
+      ],
+      [
+        0.2697455619841151,
+        0.26720567361228653,
+        0.35194039260996046,
+        0.2678487340787732,
+        0.061049890293779455,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.9767088332258171
+      ],
+      [
+        0.2697455619841151,
+        0.26720567361228653,
+        0.35194039260996046,
+        0.2678487340787732,
+        0.061049890293779455,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.9767088332258171
+      ],
+      [
+        0.27551797114982823,
+        0.2722724025955027,
+        0.3789012131275315,
+        0.27445589793144165,
+        0.06592500857945865,
+        0.9767088332258171,
+        0.9767088332258171,
+        0.9767088332258171,
+        0.9767088332258171,
+        1.0
+      ]
+    ],
+    "pairwise_list": [
+      {
+        "model_a": "graspnet_backbone",
+        "model_b": "lift3d_clip_progressive_alpha05",
+        "pearson_r": 0.999799310835834
+      },
+      {
+        "model_a": "graspnet_backbone",
+        "model_b": "lift3d_clip_raw",
+        "pearson_r": 0.3882469554212839
+      },
+      {
+        "model_a": "graspnet_backbone",
+        "model_b": "lift3d_dinov2_progressive_alpha05",
+        "pearson_r": 0.9982015623287023
+      },
+      {
+        "model_a": "graspnet_backbone",
+        "model_b": "lift3d_dinov2_raw",
+        "pearson_r": 0.07148440819756066
+      },
+      {
+        "model_a": "graspnet_backbone",
+        "model_b": "vggt_distill",
+        "pearson_r": 0.2697455619841151
+      },
+      {
+        "model_a": "graspnet_backbone",
+        "model_b": "vggt_fusion_progressive_alpha05",
+        "pearson_r": 0.2697455619841151
+      },
+      {
+        "model_a": "graspnet_backbone",
+        "model_b": "vggt_prog_enc_lora",
+        "pearson_r": 0.2697455619841151
+      },
+      {
+        "model_a": "graspnet_backbone",
+        "model_b": "vggt_progressive_alpha05",
+        "pearson_r": 0.2697455619841151
+      },
+      {
+        "model_a": "graspnet_backbone",
+        "model_b": "vggt_raw",
+        "pearson_r": 0.27551797114982823
+      },
+      {
+        "model_a": "lift3d_clip_progressive_alpha05",
+        "model_b": "lift3d_clip_raw",
+        "pearson_r": 0.38556360685984636
+      },
+      {
+        "model_a": "lift3d_clip_progressive_alpha05",
+        "model_b": "lift3d_dinov2_progressive_alpha05",
+        "pearson_r": 0.9978944605238896
+      },
+      {
+        "model_a": "lift3d_clip_progressive_alpha05",
+        "model_b": "lift3d_dinov2_raw",
+        "pearson_r": 0.07241008807390431
+      },
+      {
+        "model_a": "lift3d_clip_progressive_alpha05",
+        "model_b": "vggt_distill",
+        "pearson_r": 0.26720567361228653
+      },
+      {
+        "model_a": "lift3d_clip_progressive_alpha05",
+        "model_b": "vggt_fusion_progressive_alpha05",
+        "pearson_r": 0.26720567361228653
+      },
+      {
+        "model_a": "lift3d_clip_progressive_alpha05",
+        "model_b": "vggt_prog_enc_lora",
+        "pearson_r": 0.26720567361228653
+      },
+      {
+        "model_a": "lift3d_clip_progressive_alpha05",
+        "model_b": "vggt_progressive_alpha05",
+        "pearson_r": 0.26720567361228653
+      },
+      {
+        "model_a": "lift3d_clip_progressive_alpha05",
+        "model_b": "vggt_raw",
+        "pearson_r": 0.2722724025955027
+      },
+      {
+        "model_a": "lift3d_clip_raw",
+        "model_b": "lift3d_dinov2_progressive_alpha05",
+        "pearson_r": 0.3842690795661221
+      },
+      {
+        "model_a": "lift3d_clip_raw",
+        "model_b": "lift3d_dinov2_raw",
+        "pearson_r": -0.3065630338494861
+      },
+      {
+        "model_a": "lift3d_clip_raw",
+        "model_b": "vggt_distill",
+        "pearson_r": 0.35194039260996046
+      },
+      {
+        "model_a": "lift3d_clip_raw",
+        "model_b": "vggt_fusion_progressive_alpha05",
+        "pearson_r": 0.35194039260996046
+      },
+      {
+        "model_a": "lift3d_clip_raw",
+        "model_b": "vggt_prog_enc_lora",
+        "pearson_r": 0.35194039260996046
+      },
+      {
+        "model_a": "lift3d_clip_raw",
+        "model_b": "vggt_progressive_alpha05",
+        "pearson_r": 0.35194039260996046
+      },
+      {
+        "model_a": "lift3d_clip_raw",
+        "model_b": "vggt_raw",
+        "pearson_r": 0.3789012131275315
+      },
+      {
+        "model_a": "lift3d_dinov2_progressive_alpha05",
+        "model_b": "lift3d_dinov2_raw",
+        "pearson_r": 0.07789865991500776
+      },
+      {
+        "model_a": "lift3d_dinov2_progressive_alpha05",
+        "model_b": "vggt_distill",
+        "pearson_r": 0.2678487340787732
+      },
+      {
+        "model_a": "lift3d_dinov2_progressive_alpha05",
+        "model_b": "vggt_fusion_progressive_alpha05",
+        "pearson_r": 0.2678487340787732
+      },
+      {
+        "model_a": "lift3d_dinov2_progressive_alpha05",
+        "model_b": "vggt_prog_enc_lora",
+        "pearson_r": 0.2678487340787732
+      },
+      {
+        "model_a": "lift3d_dinov2_progressive_alpha05",
+        "model_b": "vggt_progressive_alpha05",
+        "pearson_r": 0.2678487340787732
+      },
+      {
+        "model_a": "lift3d_dinov2_progressive_alpha05",
+        "model_b": "vggt_raw",
+        "pearson_r": 0.27445589793144165
+      },
+      {
+        "model_a": "lift3d_dinov2_raw",
+        "model_b": "vggt_distill",
+        "pearson_r": 0.061049890293779455
+      },
+      {
+        "model_a": "lift3d_dinov2_raw",
+        "model_b": "vggt_fusion_progressive_alpha05",
+        "pearson_r": 0.061049890293779455
+      },
+      {
+        "model_a": "lift3d_dinov2_raw",
+        "model_b": "vggt_prog_enc_lora",
+        "pearson_r": 0.061049890293779455
+      },
+      {
+        "model_a": "lift3d_dinov2_raw",
+        "model_b": "vggt_progressive_alpha05",
+        "pearson_r": 0.061049890293779455
+      },
+      {
+        "model_a": "lift3d_dinov2_raw",
+        "model_b": "vggt_raw",
+        "pearson_r": 0.06592500857945865
+      },
+      {
+        "model_a": "vggt_distill",
+        "model_b": "vggt_fusion_progressive_alpha05",
+        "pearson_r": 1.0
+      },
+      {
+        "model_a": "vggt_distill",
+        "model_b": "vggt_prog_enc_lora",
+        "pearson_r": 1.0
+      },
+      {
+        "model_a": "vggt_distill",
+        "model_b": "vggt_progressive_alpha05",
+        "pearson_r": 1.0
+      },
+      {
+        "model_a": "vggt_distill",
+        "model_b": "vggt_raw",
+        "pearson_r": 0.9767088332258171
+      },
+      {
+        "model_a": "vggt_fusion_progressive_alpha05",
+        "model_b": "vggt_prog_enc_lora",
+        "pearson_r": 1.0
+      },
+      {
+        "model_a": "vggt_fusion_progressive_alpha05",
+        "model_b": "vggt_progressive_alpha05",
+        "pearson_r": 1.0
+      },
+      {
+        "model_a": "vggt_fusion_progressive_alpha05",
+        "model_b": "vggt_raw",
+        "pearson_r": 0.9767088332258171
+      },
+      {
+        "model_a": "vggt_prog_enc_lora",
+        "model_b": "vggt_progressive_alpha05",
+        "pearson_r": 1.0
+      },
+      {
+        "model_a": "vggt_prog_enc_lora",
+        "model_b": "vggt_raw",
+        "pearson_r": 0.9767088332258171
+      },
+      {
+        "model_a": "vggt_progressive_alpha05",
+        "model_b": "vggt_raw",
+        "pearson_r": 0.9767088332258171
+      }
+    ]
+  },
+  "concentration": {
+    "per_model": {
+      "graspnet_backbone": {
+        "entropy_of_normalized_norms": 7.592236715258981,
+        "topk_energy_ratio": 0.040747179058942755
+      },
+      "vggt_raw": {
+        "entropy_of_normalized_norms": 7.623971377012781,
+        "topk_energy_ratio": 0.02613541993777184
+      },
+      "vggt_progressive_alpha05": {
+        "entropy_of_normalized_norms": 7.624059808178259,
+        "topk_energy_ratio": 0.02596431635606563
+      },
+      "vggt_distill": {
+        "entropy_of_normalized_norms": 7.624059808178259,
+        "topk_energy_ratio": 0.02596431635606563
+      },
+      "vggt_fusion_progressive_alpha05": {
+        "entropy_of_normalized_norms": 7.624059808178259,
+        "topk_energy_ratio": 0.02596431635606563
+      },
+      "vggt_prog_enc_lora": {
+        "entropy_of_normalized_norms": 7.624059808178259,
+        "topk_energy_ratio": 0.02596431635606563
+      },
+      "lift3d_clip_raw": {
+        "entropy_of_normalized_norms": 7.623218061080997,
+        "topk_energy_ratio": 0.02758993553688438
+      },
+      "lift3d_clip_progressive_alpha05": {
+        "entropy_of_normalized_norms": 7.593931436577218,
+        "topk_energy_ratio": 0.040472576272564426
+      },
+      "lift3d_dinov2_raw": {
+        "entropy_of_normalized_norms": 7.6204464331201995,
+        "topk_energy_ratio": 0.02908307756594847
+      },
+      "lift3d_dinov2_progressive_alpha05": {
+        "entropy_of_normalized_norms": 7.602895056747946,
+        "topk_energy_ratio": 0.03777091316024184
+      }
+    },
+    "top_k_used_for_energy_ratio": 50,
+    "entropy_definition": "shannon_entropy_natural_log_of_normalized_nonnegative_scores"
+  },
+  "metrics_notes": {
+    "feature_norm_pearson": "Pearson r between per-point L2 feature norms (same N as pc_common).",
+    "concentration_entropy": "Entropy of p_i = norm_i / sum(norm), over all points.",
+    "concentration_topk_energy": "sum of top-k norms / sum of all norms (same k as top_k_stats)."
+  }
+}

@@ -179,10 +179,18 @@ def main():
     opt = torch.optim.Adam(params, lr=args.lr) if params else None
 
     train_ds = GC6DOfflineUnifiedDataset(
-        args.data_dir, split="train", camera=args.camera, max_samples=args.max_samples or None
+        args.data_dir,
+        split="train",
+        camera=args.camera,
+        max_samples=args.max_samples or None,
+        load_gt_multi=True,
     )
     val_ds = GC6DOfflineUnifiedDataset(
-        args.data_dir, split=args.val_split, camera=args.camera, max_samples=args.max_samples or None
+        args.data_dir,
+        split=args.val_split,
+        camera=args.camera,
+        max_samples=args.max_samples or None,
+        load_gt_multi=True,
     )
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, collate_fn=collate_gc6d)
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, collate_fn=collate_gc6d)
@@ -229,6 +237,12 @@ def main():
                 reranker_normalize_center=not args.no_normalize_reranker_center,
                 reranker_extended_features=None,
             )
+            if not loss.requires_grad:
+                logging.warning(
+                    "skip backward: loss 无梯度（例如无可采样 ranking pair 且未连上 reranker；"
+                    "或当前无可训参数）。本步不更新。"
+                )
+                continue
             loss.backward()
             opt.step()
             losses_ep.append(log.get("loss_total", float(loss.detach().item())))

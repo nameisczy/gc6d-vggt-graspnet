@@ -3,9 +3,43 @@
 从 checkpoint 加载 policy：根据 ckpt 内 encoder_type 选择 Placeholder 或 LIFT3D。
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import torch
+
+
+def _strip_module_prefix(key: str) -> str:
+    k = key
+    while k.startswith("module."):
+        k = k[7:]
+    return k
+
+
+def _state_key_names(state: Dict[str, Any]) -> List[str]:
+    """DDP 保存的 ``module.xxx`` 与单卡 ``xxx`` 统一成后者，便于 ``startswith`` 推断。"""
+    return [_strip_module_prefix(k) for k in state.keys()]
+
+
+def _replacement_projector_in_channels(state: Dict[str, Any]) -> Optional[int]:
+    """Conv1d projector 第一层的 in_channels（PointNext=512，CLIP/DINOv2=768）。"""
+    for k, v in state.items():
+        nk = _strip_module_prefix(k)
+        if nk == "replacement_projector.0.weight" and isinstance(v, torch.Tensor) and v.dim() == 3:
+            return int(v.shape[1])
+    return None
+
+
+# 训练脚本 / 模型类里保存的 model_mode 短名 → load 分支使用的规范名（须与 train_alignment_experiments 分支一致）
+_MODEL_MODE_ALIASES: Dict[str, str] = {
+    "lift3d_clip_progressive_replacement": "lift3d_progressive_replacement_clip",
+    "dinov2_progressive_replacement": "lift3d_progressive_replacement_dinov2",
+}
+
+
+def _canonical_model_mode(mm: Optional[str]) -> Optional[str]:
+    if mm is None:
+        return None
+    return _MODEL_MODE_ALIASES.get(mm, mm)
 
 
 def _extract_state_dict(ckpt: Any) -> Dict[str, Any]:
@@ -178,11 +212,15 @@ def load_policy_from_checkpoint(
         return model.to(_device)
 
     # Alignment experiments（v2）：CLIP/DINOv2 replacement、VGGT replacement/fusion、旧 PointNext/LIFT3D fusion
+    # 键名需去 module. 前缀，否则 DDP 存盘时匹配不到 replacement_projector. / encoder. / progressive_adapter.
+    _sk = _state_key_names(state)
     is_alignment_exp = model_mode in (
         "lift3d_replacement_clip",
         "lift3d_replacement_dinov2",
         "lift3d_progressive_replacement_clip",
         "lift3d_progressive_replacement_dinov2",
+        "lift3d_clip_progressive_replacement",
+        "dinov2_progressive_replacement",
         "lift3d_replacement_distill_clip",
         "lift3d_replacement_distill_dinov2",
         "lift3d_clip_replacement_distill",
@@ -195,21 +233,21 @@ def load_policy_from_checkpoint(
         "lift3d_replacement",
         "lift3d_fusion_normalized",
     ) or (
-        any(k.startswith("replacement_projector.") for k in state.keys())
-        and any(k.startswith("encoder.") for k in state.keys())
-        and not any(k.startswith("adapter.") for k in state.keys())
-        and not any(k.startswith("lift3d_seed_proj.") for k in state.keys())
+        any(k.startswith("replacement_projector.") for k in _sk)
+        and any(k.startswith("encoder.") for k in _sk)
+        and not any(k.startswith("adapter.") for k in _sk)
+        and not any(k.startswith("lift3d_seed_proj.") for k in _sk)
     ) or (
-        any(k.startswith("fusion_mlp.") for k in state.keys())
+        any(k.startswith("fusion_mlp.") for k in _sk)
         and (
-            any(k.startswith("lift3d_ln.") for k in state.keys())
-            or any(k.startswith("vggt_ln.") for k in state.keys())
+            any(k.startswith("lift3d_ln.") for k in _sk)
+            or any(k.startswith("vggt_ln.") for k in _sk)
         )
-    ) or any(k.startswith("progressive_ln.") for k in state.keys()) or any(
-        k.startswith("distill_ln.") for k in state.keys()
-    ) or any(k.startswith("fusion_seed_ln.") for k in state.keys()) or any(
-        k.startswith("fusion_distill_ln.") for k in state.keys()
-    )
+    ) or any(k.startswith("progressive_ln.") for k in _sk) or any(
+        k.startswith("distill_ln.") for k in _sk
+    ) or any(k.startswith("fusion_seed_ln.") for k in _sk) or any(
+        k.startswith("fusion_distill_ln.") for k in _sk
+    ) or any(k.startswith("progressive_adapter.") for k in _sk)
 
     if is_alignment_exp:
         import os
@@ -223,44 +261,68 @@ def load_policy_from_checkpoint(
         if not _graspnet_ckpt:
             raise ValueError("alignment checkpoint 需要 graspnet_ckpt")
         _device = torch.device(device) if isinstance(device, str) else device
-        _mm = model_mode
+        _mm = _canonical_model_mode(model_mode)
         if _mm is None:
-            if any(k.startswith("fusion_mlp.") for k in state.keys()) and any(
-                k.startswith("vggt_ln.") for k in state.keys()
-            ):
+            sk = _state_key_names(state)
+            if any(k.startswith("fusion_mlp.") for k in sk) and any(k.startswith("vggt_ln.") for k in sk):
                 _mm = "vggt_fusion_normalized"
-            elif any(k.startswith("fusion_mlp.") for k in state.keys()) and any(
-                k.startswith("lift3d_ln.") for k in state.keys()
-            ):
+            elif any(k.startswith("fusion_mlp.") for k in sk) and any(k.startswith("lift3d_ln.") for k in sk):
                 _mm = "lift3d_fusion_normalized"
-            elif any(k.startswith("fusion_seed_ln.") for k in state.keys()):
+            elif any(k.startswith("fusion_seed_ln.") for k in sk):
                 _mm = "vggt_progressive_fusion"
-            elif any(k.startswith("fusion_distill_ln.") for k in state.keys()):
+            elif any(k.startswith("fusion_distill_ln.") for k in sk):
                 _mm = "vggt_fusion_distill"
-            elif any(k.startswith("progressive_ln.") for k in state.keys()):
-                if any(k.startswith("encoder.pt_mlp.") for k in state.keys()):
+            elif any(k.startswith("progressive_ln.") for k in sk) or any(
+                k.startswith("progressive_adapter.") for k in sk
+            ):
+                # 注意：progressive_ln 为 elementwise_affine=False 时 state 里可能无 progressive_ln.*，
+                # 但 progressive_adapter（Conv1d）总有参数；键名可能带 module. 前缀（见 _state_key_names）。
+                if any(k.startswith("encoder.pt_mlp.") for k in sk):
                     _mm = "vggt_progressive_replacement"
-                elif any(k.startswith("encoder.dinov2.") for k in state.keys()):
+                elif any(k.startswith("encoder.dinov2.") for k in sk):
                     _mm = "lift3d_progressive_replacement_dinov2"
                 else:
                     _mm = "lift3d_progressive_replacement_clip"
-            elif any(k.startswith("distill_ln.") for k in state.keys()):
-                if any(k.startswith("encoder.pt_mlp.") for k in state.keys()):
+            elif any(k.startswith("distill_ln.") for k in sk):
+                if any(k.startswith("encoder.pt_mlp.") for k in sk):
                     _mm = "vggt_replacement_distill"
-                elif any(k.startswith("encoder.dinov2.") for k in state.keys()):
+                elif any(k.startswith("encoder.dinov2.") for k in sk):
                     _mm = "lift3d_replacement_distill_dinov2"
                 else:
                     _mm = "lift3d_replacement_distill_clip"
-            elif any(k.startswith("encoder.dinov2.") for k in state.keys()):
+            elif any(k.startswith("encoder.dinov2.") for k in sk):
                 _mm = "lift3d_replacement_dinov2"
-            elif any(k.startswith("encoder.cls_token") for k in state.keys()) or any(
-                k.startswith("encoder.resblocks.") for k in state.keys()
+            elif any(k.startswith("encoder.cls_token") for k in sk) or any(
+                k.startswith("encoder.resblocks.") for k in sk
             ):
                 _mm = "lift3d_replacement_clip"
-            elif any(k.startswith("encoder.pt_mlp.") for k in state.keys()):
+            elif any(k.startswith("encoder.pt_mlp.") for k in sk):
                 _mm = "vggt_replacement"
-            elif any(k.startswith("replacement_projector.") for k in state.keys()):
-                _mm = "lift3d_replacement"
+            elif any(k.startswith("replacement_projector.") for k in sk):
+                # PointNext 替代为 512→256；CLIP/DINOv2 为 768→256，不可误判为 lift3d_replacement（512）
+                rp_in = _replacement_projector_in_channels(state)
+                if rp_in == 768:
+                    if any(k.startswith("progressive_adapter.") for k in sk):
+                        if any(k.startswith("encoder.dinov2.") for k in sk):
+                            _mm = "lift3d_progressive_replacement_dinov2"
+                        else:
+                            _mm = "lift3d_progressive_replacement_clip"
+                    elif any(k.startswith("encoder.dinov2.") for k in sk):
+                        _mm = "lift3d_replacement_dinov2"
+                    elif any(k.startswith("encoder.cls_token") for k in sk) or any(
+                        k.startswith("encoder.resblocks.") for k in sk
+                    ):
+                        _mm = "lift3d_replacement_clip"
+                    else:
+                        # 冻结 encoder 未写入 ckpt 时：优先读保存的 model_mode
+                        tm = ckpt.get("train_meta") if isinstance(ckpt.get("train_meta"), dict) else {}
+                        mm2 = _canonical_model_mode(ckpt.get("model_mode") or tm.get("model_mode"))
+                        if mm2 == "lift3d_progressive_replacement_dinov2":
+                            _mm = "lift3d_progressive_replacement_dinov2"
+                        else:
+                            _mm = "lift3d_progressive_replacement_clip"
+                else:
+                    _mm = "lift3d_replacement"
 
         if _mm == "lift3d_fusion_normalized":
             from models.lift3d_fusion_normalized_pipeline import build_lift3d_fusion_normalized_graspnet

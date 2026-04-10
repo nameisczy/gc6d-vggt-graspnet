@@ -149,3 +149,7 @@ temp/
 # ===== OS =====
 .DS_Store
 Thumbs.db
+
+# ===== Scripts / Docs =====
+*.sh
+*.md
