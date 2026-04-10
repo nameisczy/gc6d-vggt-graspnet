@@ -263,7 +263,11 @@ def apply_alignment_freeze(
         apply_lift3d_replacement_freeze(model, freeze_head=freeze_head)
     elif model_mode in ("lift3d_progressive_replacement_clip", "lift3d_progressive_replacement_dinov2"):
         apply_vggt_progressive_replacement_freeze(model, freeze_head=freeze_head)
-    elif model_mode in ("lift3d_replacement_distill_clip", "lift3d_replacement_distill_dinov2"):
+    elif model_mode in (
+        "lift3d_replacement_distill_clip",
+        "lift3d_replacement_distill_dinov2",
+        "lift3d_clip_replacement_distill",
+    ):
         apply_vggt_replacement_distill_freeze(model)
     elif model_mode == "vggt_replacement":
         apply_vggt_replacement_freeze(model, freeze_head=freeze_head)
@@ -396,6 +400,7 @@ def set_alignment_train_state(
         "lift3d_progressive_replacement_dinov2",
         "lift3d_replacement_distill_clip",
         "lift3d_replacement_distill_dinov2",
+        "lift3d_clip_replacement_distill",
         "vggt_progressive_fusion",
         "vggt_fusion_distill",
     ):

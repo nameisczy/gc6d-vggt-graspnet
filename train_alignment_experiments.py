@@ -344,8 +344,14 @@ def parse_args():
     p.add_argument(
         "--distill_task_weight",
         type=float,
-        default=0.0,
-        help="distill 模式：17D 主任务权重（0=纯 distill）",
+        default=1.0,
+        help="distill 模式：17D 主任务权重（默认 1.0；设 0 为纯 distill）",
+    )
+    p.add_argument(
+        "--fusion_distill_alpha",
+        type=float,
+        default=0.2,
+        help="仅 vggt_fusion_distill：vpmodule 输入中 student 权重 α，(1-α)·teacher+α·student",
     )
     p.add_argument(
         "--vggt_train_encoder",
@@ -538,6 +544,7 @@ def main():
             lora_scale=args.lora_scale,
             lora_last_n_blocks=args.lora_last_n_blocks,
             distill_loss_type=args.distill_loss_type,
+            fusion_distill_alpha=float(args.fusion_distill_alpha),
             device=device,
         )
     elif mm == "vggt_fusion_normalized":
@@ -575,7 +582,7 @@ def main():
         freeze_head_eff = True
     elif mm in ("lift3d_progressive_replacement_clip", "lift3d_progressive_replacement_dinov2"):
         freeze_head_eff = True
-    elif mm in ("lift3d_replacement_distill_clip", "lift3d_replacement_distill_dinov2"):
+    elif mm in ("lift3d_replacement_distill_clip", "lift3d_replacement_distill_dinov2", "lift3d_clip_replacement_distill"):
         freeze_head_eff = True
 
     if args.vggt_train_encoder and mm not in ("vggt_progressive_replacement", "vggt_replacement_distill"):
@@ -679,6 +686,7 @@ def main():
             "lift3d_replacement_distill_dinov2",
         )
         else None,
+        "fusion_distill_alpha": float(args.fusion_distill_alpha) if mm == "vggt_fusion_distill" else None,
         "vggt_train_encoder": bool(args.vggt_train_encoder)
         if mm in ("vggt_progressive_replacement", "vggt_replacement_distill")
         else None,

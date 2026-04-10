@@ -30,6 +30,12 @@ def _make_distill_adapter() -> nn.Sequential:
     )
 
 
+def _distill_feature_debug_print(tag: str, f_input: torch.Tensor) -> None:
+    """与 lift3d distill 对比用：形状 (B, C, K) 时 norm 沿通道维。"""
+    print(f"[distill:{tag}] feature mean/std:", f_input.mean().item(), f_input.std().item())
+    print(f"[distill:{tag}] feature norm:", f_input.norm(dim=1).mean().item())
+
+
 class VGGReplacementDistillGraspNet(nn.Module):
     def __init__(
         self,
@@ -67,6 +73,7 @@ class VGGReplacementDistillGraspNet(nn.Module):
         x = self.distill_projector(vggt_raw)
         x_ln = self.distill_ln(x.permute(0, 2, 1).contiguous()).permute(0, 2, 1).contiguous()
         f_student = self.distill_adapter(x_ln)
+        _distill_feature_debug_print("vggt_replacement_distill", f_student)
 
         if self.distill_loss_type == "l2":
             l_dist = F.mse_loss(f_student, f_teacher_det)
@@ -97,6 +104,7 @@ def build_vggt_replacement_distill_graspnet(
     distill_loss_type: str = "l2",
     device: Optional[torch.device] = None,
 ) -> VGGReplacementDistillGraspNet:
+    """LoRA 仅作用于 VGGTEncoder 权重；前向与无 LoRA 时相同（student→vpmodule）。"""
     import torch as _t
 
     if device is None:

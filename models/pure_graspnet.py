@@ -26,6 +26,7 @@ class PureGraspNetPipeline(nn.Module):
         score_calibration_mode: str = "none",
         score_delta_scale: float = 0.1,
         score_calibration_hidden: int = 12,
+        reranker: Optional[nn.Module] = None,
     ):
         super().__init__()
         self.grasp_net = grasp_net
@@ -49,6 +50,9 @@ class PureGraspNetPipeline(nn.Module):
             )
         else:
             self.score_calibration_head = None
+        # 训练时由外部 loss 使用；forward 不调用，保持与旧 checkpoint 兼容
+        self.reranker = reranker
+        self.reranker_extended_features = getattr(reranker, "in_dim", 0) >= 9 if reranker is not None else False
 
     def forward(self, point_cloud: torch.Tensor, images: Optional[torch.Tensor] = None) -> dict:
         if images is not None:
@@ -77,17 +81,50 @@ def build_pure_graspnet_pipeline(
     score_delta_scale: float = 0.1,
     score_calibration_hidden: int = 12,
     device: Optional[torch.device] = None,
+    use_lora_head: bool = False,
+    lora_r: int = 8,
+    lora_alpha: float = 16.0,
+    inject_view_estimator_last: bool = False,
+    reranker_enabled: bool = False,
+    reranker_extended_features: bool = True,
 ) -> PureGraspNetPipeline:
     import torch as _t
 
     if device is None:
         device = _t.device("cuda" if _t.cuda.is_available() else "cpu")
     grasp_net = load_graspnet_pretrained(graspnet_ckpt, device, graspnet_root, is_training=False)
+    reranker: Optional[nn.Module] = None
+    if reranker_enabled:
+        from .reranker import ResidualReranker
+
+        if reranker_extended_features:
+            reranker = ResidualReranker(in_dim=9, hidden1=128, hidden2=64)
+        else:
+            reranker = ResidualReranker(in_dim=3, hidden1=64, hidden2=32)
     model = PureGraspNetPipeline(
         grasp_net=grasp_net,
         score_calibration_mode=score_calibration_mode,
         score_delta_scale=score_delta_scale,
         score_calibration_hidden=score_calibration_hidden,
+        reranker=reranker,
     )
+    if use_lora_head:
+        from .graspnet_head_lora import inject_lora_grasp_head, print_module_train_stats
+
+        inject_lora_grasp_head(
+            model.grasp_net,
+            lora_r=lora_r,
+            lora_alpha=float(lora_alpha),
+            inject_view_estimator_last=inject_view_estimator_last,
+        )
+        print_module_train_stats("pure_graspnet.grasp_net", model.grasp_net)
+    if reranker is not None:
+        from .graspnet_head_lora import print_module_train_stats
+
+        print_module_train_stats("pure_graspnet.reranker", reranker)
+    from .graspnet_head_lora import parameter_train_stats
+
+    tot, trn, pct = parameter_train_stats(model)
+    print(f"[pure_graspnet pipeline] total_params={tot:,} trainable_params={trn:,} ({pct:.4f}%)")
     return model.to(device)
 

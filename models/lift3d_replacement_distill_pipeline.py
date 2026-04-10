@@ -25,6 +25,7 @@ from .lift3d_clip_replacement_pipeline import (
     _normalize_seed_lift3d,
 )
 from .lift3d_local_fusion import nearest_neighbor_gather_features
+from .vggt_replacement_distill_pipeline import _distill_feature_debug_print
 
 
 def _make_distill_adapter() -> nn.Sequential:
@@ -75,6 +76,7 @@ class Lift3DClipReplacementDistillGraspNet(nn.Module):
         x = self.distill_projector(lift_raw)
         x_ln = self.distill_ln(x.permute(0, 2, 1).contiguous()).permute(0, 2, 1).contiguous()
         f_student = self.distill_adapter(x_ln)
+        _distill_feature_debug_print("lift3d_replacement_distill_clip", f_student)
 
         if self.distill_loss_type == "l2":
             l_dist = F.mse_loss(f_student, f_teacher_det)
@@ -123,6 +125,7 @@ class Dinov2ReplacementDistillGraspNet(nn.Module):
         x = self.distill_projector(enc_b768s.float())
         x_ln = self.distill_ln(x.permute(0, 2, 1).contiguous()).permute(0, 2, 1).contiguous()
         f_student = self.distill_adapter(x_ln)
+        _distill_feature_debug_print("lift3d_replacement_distill_dinov2", f_student)
 
         if self.distill_loss_type == "l2":
             l_dist = F.mse_loss(f_student, f_teacher_det)

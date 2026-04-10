@@ -9,7 +9,7 @@ Encoder + Adapter + 预训练 GraspNet（graspnet-baseline）head。
 import importlib.util
 import os
 import sys
-from typing import Optional, Tuple, List
+from typing import List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -206,55 +206,82 @@ def apply_model_free_collision_filter(
     return gg_f.grasp_group_array
 
 
-def pred_decode_17d_differentiable(
-    end_points: dict, device: torch.device, max_grasps: int = 128, sort_and_truncate: bool = True
-) -> torch.Tensor:
-    """可微 17D 解码，用于训练 backward。用 softmax 替代 argmax，输出 (B, K, 17)。
-    与 baseline 对齐：score 乘以 objectness 概率，使背景 seed 得分压低（baseline 只保留 objectness==1）。
-    sort_and_truncate=False 时不做按 score 排序与截断（实验 1：训练时不排序，仅 eval 时排序）。"""
-    # 形状: (B, 2, num_seed), (B, 12, num_seed, 4), (B, num_seed, 3) 等
-    obj_score = end_points["objectness_score"].float()  # (B, 2, num_seed)
-    grasp_score = end_points["grasp_score_pred"].float()  # (B, num_angle, num_seed, num_depth)
-    angle_cls = end_points["grasp_angle_cls_pred"].float()  # (B, num_angle, num_seed, num_depth)
-    width_pred = end_points["grasp_width_pred"].float()  # (B, num_angle, num_seed, num_depth)
-    tolerance_pred = end_points["grasp_tolerance_pred"].float()  # (B, num_angle, num_seed, num_depth)
-    center = end_points["fp2_xyz"].float()  # (B, num_seed, 3)
-    approach = -end_points["grasp_top_view_xyz"].float()  # (B, num_seed, 3)
+def _compute_differentiable_seed_state(end_points: dict) -> dict:
+    """
+    与 pred_decode_17d_differentiable 内部一致的可微 per-seed 聚合（不含排序/截断）。
+    返回 dict：score_val, width_val, tol_val, depth_val, R_flat, center, num_seed, dev。
+    """
+    obj_score = end_points["objectness_score"].float()
+    grasp_score = end_points["grasp_score_pred"].float()
+    angle_cls = end_points["grasp_angle_cls_pred"].float()
+    width_pred = end_points["grasp_width_pred"].float()
+    tolerance_pred = end_points["grasp_tolerance_pred"].float()
+    center = end_points["fp2_xyz"].float()
+    approach = -end_points["grasp_top_view_xyz"].float()
 
     B, num_angle, num_seed, num_depth = grasp_score.shape
     dev = grasp_score.device
 
-    # 每个 seed 上对 angle 做 softmax（对 depth 维取平均后）
-    angle_cls_per = angle_cls.mean(dim=3)  # (B, num_angle, num_seed)
-    angle_weights = F.softmax(angle_cls_per, dim=1)  # (B, num_angle, num_seed)
+    angle_cls_per = angle_cls.mean(dim=3)
+    angle_weights = F.softmax(angle_cls_per, dim=1)
     angle_vals = (torch.arange(num_angle, device=dev, dtype=torch.float32) * (3.14159265 / num_angle)).view(1, num_angle, 1)
-    angle_val = (angle_weights * angle_vals).sum(dim=1)  # (B, num_seed)
+    angle_val = (angle_weights * angle_vals).sum(dim=1)
 
-    # depth: 先按 angle 加权得 (B, num_seed, num_depth)，再 softmax
-    score_per_depth = (angle_weights.unsqueeze(3) * grasp_score).sum(dim=1)  # (B, num_seed, num_depth)
+    score_per_depth = (angle_weights.unsqueeze(3) * grasp_score).sum(dim=1)
     depth_weights = F.softmax(score_per_depth, dim=2)
     depth_vals = (torch.arange(1, num_depth + 1, device=dev, dtype=torch.float32) * 0.01).view(1, 1, num_depth)
-    depth_val = (depth_weights * depth_vals).sum(dim=2)  # (B, num_seed)
+    depth_val = (depth_weights * depth_vals).sum(dim=2)
 
-    # score / width / tolerance: angle 与 depth 双加权
-    score_w = (angle_weights.unsqueeze(3) * grasp_score).sum(dim=1)  # (B, num_seed, num_depth)
-    score_val = (depth_weights * score_w).sum(dim=2)  # (B, num_seed)
+    score_w = (angle_weights.unsqueeze(3) * grasp_score).sum(dim=1)
+    score_val = (depth_weights * score_w).sum(dim=2)
     tol_w = (angle_weights.unsqueeze(3) * tolerance_pred).sum(dim=1)
     tol_val = (depth_weights * tol_w).sum(dim=2)
     score_val = score_val * (tol_val / GRASP_MAX_TOLERANCE).clamp(0, 1)
-    # 与 baseline 对齐：baseline 只保留 objectness==1 的 seed，此处用物体类概率加权 score
-    p_obj = F.softmax(obj_score, dim=1)[:, 1, :]  # (B, num_seed)，第 1 类为物体
+    p_obj = F.softmax(obj_score, dim=1)[:, 1, :]
     score_val = score_val * (p_obj + 1e-8)
 
     width_w = (angle_weights.unsqueeze(3) * width_pred).sum(dim=1)
     width_val = (depth_weights * width_w).sum(dim=2)
     width_val = (1.2 * width_val).clamp(0, GRASP_MAX_WIDTH)
 
-    # 旋转矩阵
     approach_flat = approach.reshape(-1, 3)
     angle_flat = angle_val.reshape(-1)
     R = _batch_viewpoint_params_to_matrix(approach_flat, angle_flat).reshape(B, num_seed, 3, 3)
     R_flat = R.reshape(B, num_seed, 9)
+
+    return {
+        "score_val": score_val,
+        "width_val": width_val,
+        "tol_val": tol_val,
+        "depth_val": depth_val,
+        "R_flat": R_flat,
+        "center": center,
+        "num_seed": num_seed,
+        "dev": dev,
+    }
+
+
+def per_seed_soft_scalars_from_end_points(end_points: dict) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """与可微解码一致的 (score, width, tolerance)，形状均为 (B, num_seed)。供 reranker / ranking loss 使用。"""
+    st = _compute_differentiable_seed_state(end_points)
+    return st["score_val"], st["width_val"], st["tol_val"]
+
+
+def pred_decode_17d_differentiable(
+    end_points: dict, device: torch.device, max_grasps: int = 128, sort_and_truncate: bool = True
+) -> torch.Tensor:
+    """可微 17D 解码，用于训练 backward。用 softmax 替代 argmax，输出 (B, K, 17)。
+    与 baseline 对齐：score 乘以 objectness 概率，使背景 seed 得分压低（baseline 只保留 objectness==1）。
+    sort_and_truncate=False 时不做按 score 排序与截断（实验 1：训练时不排序，仅 eval 时排序）。"""
+    st = _compute_differentiable_seed_state(end_points)
+    score_val = st["score_val"]
+    width_val = st["width_val"]
+    depth_val = st["depth_val"]
+    R_flat = st["R_flat"]
+    center = st["center"]
+    num_seed = st["num_seed"]
+    dev = st["dev"]
+    B = score_val.shape[0]
 
     height_val = 0.02
     out = torch.cat([

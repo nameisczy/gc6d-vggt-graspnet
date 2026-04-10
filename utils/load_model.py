@@ -185,6 +185,7 @@ def load_policy_from_checkpoint(
         "lift3d_progressive_replacement_dinov2",
         "lift3d_replacement_distill_clip",
         "lift3d_replacement_distill_dinov2",
+        "lift3d_clip_replacement_distill",
         "vggt_replacement",
         "vggt_progressive_replacement",
         "vggt_replacement_distill",
@@ -387,6 +388,9 @@ def load_policy_from_checkpoint(
                 lora_scale=lora_scale,
                 lora_last_n_blocks=ckpt.get("lora_last_n_blocks"),
                 distill_loss_type=str(tm.get("distill_loss_type") or ckpt.get("distill_loss_type", "l2")),
+                fusion_distill_alpha=float(
+                    tm.get("fusion_distill_alpha") if tm.get("fusion_distill_alpha") is not None else ckpt.get("fusion_distill_alpha", 0.2)
+                ),
                 device=_device,
             )
         elif _mm == "lift3d_replacement_clip":

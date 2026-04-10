@@ -15,12 +15,14 @@ import torch.nn.functional as F
 # 主损失仍复用 utils.loss（与旧 benchmark 一致），避免重复实现 matching 逻辑
 from utils.loss import action_loss_topk_matched_17d, pad_gt_grasp_group_17d
 from models.graspnet_adapter import pred_decode_17d_differentiable, pred_decode_17d
+from training.reranking_loss import reranker_ranking_loss_from_endpoints
 
 _DISTILL_MODEL_MODES = (
     "vggt_replacement_distill",
     "vggt_fusion_distill",
     "lift3d_replacement_distill_clip",
     "lift3d_replacement_distill_dinov2",
+    "lift3d_clip_replacement_distill",
 )
 
 
@@ -145,12 +147,29 @@ def compute_train_loss(
     ranking_margin: float = 0.05,
     data_dir: Optional[str] = None,
     distill_weight: float = 1.0,
-    distill_task_weight: float = 0.0,
+    distill_task_weight: float = 1.0,
+    loss_type: str = "regression",
+    experiment_mode: str = "baseline",
+    reranker_type: str = "ranking",
+    reranker_fusion: str = "add",
+    reranker_lambda: float = 0.1,
+    ranking_top_k: int = 50,
+    ranking_pos_dist_thresh: float = 0.05,
+    ranking_neg_samples_per_pos: int = 3,
+    ranking_max_pairs: int = 2048,
+    reranker_bounded: bool = True,
+    reranker_normalize_center: bool = True,
+    reranker_extended_features: Optional[bool] = None,
 ) -> Tuple[torch.Tensor, Dict[str, float]]:
     """
     返回 (total_loss, log_dict)。
     VGGT / vggt_replacement 需传 data_dir 以便从 meta 加载 RGB。
-    vggt_replacement_distill / lift3d_*_distill：distill_weight * distill_loss + distill_task_weight * main(+aux)。
+    distill 模式：total = distill_weight * distill_loss + distill_task_weight * main(+aux)；
+    默认 distill_task_weight=1.0 保证仍训练抓取主任务。
+    loss_type: regression（17D matching，默认）| ranking（仅训练 reranker + 可选 LoRA，需 model.reranker）
+    experiment_mode: baseline | lora_only | reranker_only | lora_reranker — ranking 时 reranker_only 对输入标量 detach，不反传 GraspNet。
+    reranker_bounded: True 时对 residual 用 tanh 再与 baseline 融合；False 为旧融合（add 不加 tanh，mul 用 sigmoid）。
+    reranker_extended_features: None 时按 reranker.in_dim 自动选 3/9 维特征。
     """
     images = None
     if model_requires_images(model):
@@ -173,7 +192,7 @@ def compute_train_loss(
             "loss_quality_aux": 0.0,
             "loss_ranking_aux": 0.0,
         }
-        if distill_task_weight > 0:
+        if distill_task_weight != 0.0:
             pred_17d = pred_decode_17d_differentiable(
                 end_points,
                 device,
@@ -207,13 +226,47 @@ def compute_train_loss(
         log["loss_total"] = float(total.detach().item())
         return total, log
 
+    gt_17d = pad_gt_grasp_group_17d(metas, device)
+
+    if loss_type == "ranking":
+        rr = getattr(model, "reranker", None)
+        if rr is None:
+            raise ValueError("loss_type=ranking 需要 model.reranker（build_pure_graspnet_pipeline(reranker_enabled=True)）")
+        detach_scalars = experiment_mode == "reranker_only"
+        total, rk_log = reranker_ranking_loss_from_endpoints(
+            end_points,
+            gt_17d,
+            rr,
+            top_k=ranking_top_k,
+            margin=ranking_margin,
+            reranker_type=reranker_type,
+            fusion=reranker_fusion,
+            lam=reranker_lambda,
+            bounded=reranker_bounded,
+            extended_features=reranker_extended_features,
+            normalize_center_by_scene=reranker_normalize_center,
+            pos_dist_thresh=ranking_pos_dist_thresh,
+            neg_samples_per_pos=ranking_neg_samples_per_pos,
+            max_pairs=ranking_max_pairs,
+            detach_scalars_for_reranker=detach_scalars,
+        )
+        log: Dict[str, float] = {
+            "loss_main": 0.0,
+            "loss_collision_aux": 0.0,
+            "loss_quality_aux": 0.0,
+            "loss_ranking_aux": float(rk_log.get("loss_ranking", 0.0)),
+            "loss_ranking_reranker": float(rk_log.get("loss_ranking", 0.0)),
+            "ranking_pos_count": float(rk_log.get("ranking_pos_count", 0.0)),
+        }
+        log["loss_total"] = float(total.detach().item())
+        return total, log
+
     pred_17d = pred_decode_17d_differentiable(
         end_points,
         device,
         max_grasps=max_grasps_decode,
         sort_and_truncate=sort_and_truncate_decode,
     )
-    gt_17d = pad_gt_grasp_group_17d(metas, device)
     main = action_loss_topk_matched_17d(
         pred_17d,
         gt_17d,
@@ -264,7 +317,20 @@ def evaluate_mean_val_loss(
     max_grasps: int = 128,
     data_dir: Optional[str] = None,
     distill_weight: float = 1.0,
-    distill_task_weight: float = 0.0,
+    distill_task_weight: float = 1.0,
+    loss_type: str = "regression",
+    experiment_mode: str = "baseline",
+    reranker_type: str = "ranking",
+    reranker_fusion: str = "add",
+    reranker_lambda: float = 0.1,
+    ranking_top_k: int = 50,
+    ranking_margin: float = 0.1,
+    ranking_pos_dist_thresh: float = 0.05,
+    ranking_neg_samples_per_pos: int = 3,
+    ranking_max_pairs: int = 2048,
+    reranker_bounded: bool = True,
+    reranker_normalize_center: bool = True,
+    reranker_extended_features: Optional[bool] = None,
 ) -> float:
     """验证集 loss：默认 17D matching；distill 模式时为 distill 加权均值（与 task 组合时同 compute_train_loss）。"""
     model.eval()
@@ -287,7 +353,7 @@ def evaluate_mean_val_loss(
             if l_d is None:
                 raise ValueError("distill 验证需 end_points['distill_loss']")
             loss_val = distill_weight * float(l_d.detach().item())
-            if distill_task_weight > 0:
+            if distill_task_weight != 0.0:
                 pred_17d = pred_decode_17d(end_points, device, max_grasps=max_grasps)
                 main = action_loss_topk_matched_17d(
                     pred_17d,
@@ -302,17 +368,41 @@ def evaluate_mean_val_loss(
             total += loss_val
             n += 1
             continue
-        pred_17d = pred_decode_17d(end_points, device, max_grasps=max_grasps)
-        loss = action_loss_topk_matched_17d(
-            pred_17d,
-            gt_17d,
-            mode=loss_mode,
-            alpha=loss_alpha,
-            best_gt_weight=best_gt_weight,
-            pred2gt_agg=pred2gt_agg,
-            rank_weights=None,
-        )
-        total += float(loss.item())
+        if loss_type == "ranking":
+            rr = getattr(model, "reranker", None)
+            if rr is None:
+                raise ValueError("loss_type=ranking 验证需要 model.reranker")
+            detach_scalars = experiment_mode == "reranker_only"
+            rk_loss, _ = reranker_ranking_loss_from_endpoints(
+                end_points,
+                gt_17d,
+                rr,
+                top_k=ranking_top_k,
+                margin=ranking_margin,
+                reranker_type=reranker_type,
+                fusion=reranker_fusion,
+                lam=reranker_lambda,
+                bounded=reranker_bounded,
+                extended_features=reranker_extended_features,
+                normalize_center_by_scene=reranker_normalize_center,
+                pos_dist_thresh=ranking_pos_dist_thresh,
+                neg_samples_per_pos=ranking_neg_samples_per_pos,
+                max_pairs=ranking_max_pairs,
+                detach_scalars_for_reranker=detach_scalars,
+            )
+            total += float(rk_loss.item())
+        else:
+            pred_17d = pred_decode_17d(end_points, device, max_grasps=max_grasps)
+            loss = action_loss_topk_matched_17d(
+                pred_17d,
+                gt_17d,
+                mode=loss_mode,
+                alpha=loss_alpha,
+                best_gt_weight=best_gt_weight,
+                pred2gt_agg=pred2gt_agg,
+                rank_weights=None,
+            )
+            total += float(loss.item())
         n += 1
     model.train()
     return total / max(n, 1)

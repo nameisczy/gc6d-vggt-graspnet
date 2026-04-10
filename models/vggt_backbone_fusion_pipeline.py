@@ -4,8 +4,8 @@ VGGT（冻结）与 GraspNet backbone seed 的显式融合路径（Part 2）：
 
 - vggt_progressive_fusion：f_in = (1-α)·f_graspnet + α·f_vggt_fused，
   f_vggt_fused = fusion_to_seed_projector → LayerNorm(256) → fusion_seed_adapter。
-- vggt_fusion_distill：teacher = backbone seed（detach），student = 同上投影+LN+adapter，
-  L2/cosine distill_loss；student 送入 vpmodule。
+- vggt_fusion_distill：teacher = backbone seed（detach），student = 同上投影+LN+adapter；
+  distill_loss 仍为 student vs teacher；vpmodule 输入为 (1-α)·teacher + α·student（α 默认 0.2）。
 
 encoder 与 GraspNet backbone/head 均冻结；仅训练 fusion 相关层。
 """
@@ -24,6 +24,7 @@ from .lift3d_local_fusion import nearest_neighbor_gather_features
 from .vggt_encoder import VGGTEncoder
 from utils.point_norm import normalize_xyz_with_pc
 
+from .vggt_replacement_distill_pipeline import _distill_feature_debug_print
 from .vggt_replacement_pipeline import _vggt_local_features_b768k
 
 
@@ -83,7 +84,7 @@ class VGGTFusionProgressiveGraspNet(nn.Module):
 
 
 class VGGTFusionDistillGraspNet(nn.Module):
-    """将 VGGT 经 LN+adapter 的 student 对齐到 backbone seed（teacher）。"""
+    """Distill 损失：student vs teacher；vpmodule 输入为 teacher/student 凸组合（与 progressive 融合一致思想）。"""
 
     def __init__(
         self,
@@ -92,12 +93,14 @@ class VGGTFusionDistillGraspNet(nn.Module):
         *,
         vggt_dim: int = 768,
         distill_loss_type: str = "l2",
+        fusion_distill_alpha: float = 0.2,
     ):
         super().__init__()
         self.encoder = encoder
         self.grasp_net = grasp_net
         self.vggt_dim = vggt_dim
         self.distill_loss_type = str(distill_loss_type)
+        self.fusion_distill_alpha = float(fusion_distill_alpha)
         self.fusion_distill_projector = make_conv1d_projector(vggt_dim, 256)
         self.fusion_distill_ln = nn.LayerNorm(256, elementwise_affine=False)
         self.fusion_distill_adapter = _make_fusion_adapter()
@@ -132,7 +135,10 @@ class VGGTFusionDistillGraspNet(nn.Module):
         else:
             raise ValueError("distill_loss_type 应为 l2 或 cosine")
 
-        end_points = view_estimator.vpmodule(seed_xyz, f_student, end_points)
+        a = self.fusion_distill_alpha
+        f_input = (1.0 - a) * f_teacher_det + a * f_student
+        _distill_feature_debug_print("vggt_fusion_distill", f_input)
+        end_points = view_estimator.vpmodule(seed_xyz, f_input, end_points)
         end_points = self.grasp_net.grasp_generator(end_points)
         end_points["distill_loss"] = l_dist
         return end_points
@@ -185,6 +191,7 @@ def build_vggt_fusion_distill_graspnet(
     lora_scale: float = 1.0,
     lora_last_n_blocks: Optional[int] = None,
     distill_loss_type: str = "l2",
+    fusion_distill_alpha: float = 0.2,
     device: Optional[torch.device] = None,
 ) -> VGGTFusionDistillGraspNet:
     import torch as _t
@@ -205,5 +212,6 @@ def build_vggt_fusion_distill_graspnet(
         encoder=encoder,
         grasp_net=grasp_net,
         distill_loss_type=distill_loss_type,
+        fusion_distill_alpha=fusion_distill_alpha,
     )
     return model.to(device)
