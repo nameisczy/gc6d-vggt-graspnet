@@ -136,6 +136,23 @@ def _encoder_type_for_table(model: torch.nn.Module, model_mode: str) -> str:
     return getattr(model, "encoder_type", model_mode)
 
 
+def _trainable_param_stats(model: torch.nn.Module) -> tuple[int, int, int]:
+    """返回 (encoder 可训元素数, 非 encoder 可训元素数, 总可训元素数)。"""
+    enc = getattr(model, "encoder", None)
+    enc_ids = {id(p) for p in enc.parameters()} if enc is not None else set()
+    enc_n = 0
+    other_n = 0
+    for p in model.parameters():
+        if not p.requires_grad:
+            continue
+        n = p.numel()
+        if id(p) in enc_ids:
+            enc_n += n
+        else:
+            other_n += n
+    return enc_n, other_n, enc_n + other_n
+
+
 def _append_results_table(path: str, row: Dict[str, Any]) -> None:
     rows: list = []
     if os.path.isfile(path):
@@ -370,6 +387,13 @@ def parse_args():
         default=0.1,
         help="可训 encoder（含 LoRA）相对主 lr 的倍率；VGGT 微调建议 0.05~0.1",
     )
+    p.add_argument(
+        "--two_stage_training",
+        action="store_true",
+        help="与 --vggt_train_encoder 联用：两阶段训练（Stage1 冻结 encoder；Stage2 LoRA 微调）。总 epoch = stage1+stage2",
+    )
+    p.add_argument("--stage1_epochs", type=int, default=5, help="两阶段训练时 Stage1（冻结 encoder）epoch 数")
+    p.add_argument("--stage2_epochs", type=int, default=10, help="两阶段训练时 Stage2（LoRA）epoch 数")
     return p.parse_args()
 
 
@@ -588,17 +612,63 @@ def main():
     if args.vggt_train_encoder and mm not in ("vggt_progressive_replacement", "vggt_replacement_distill"):
         raise ValueError("--vggt_train_encoder 仅用于 vggt_progressive_replacement 或 vggt_replacement_distill")
 
-    apply_alignment_freeze(
-        model,
-        mm,
-        pure_freeze_vpmodule=bool(getattr(args, "pure_freeze_vpmodule", False)),
-        pure_only_train_last_score_head=bool(getattr(args, "pure_only_train_last_score_head", False)),
-        pure_train_score_calibrator_only=bool(getattr(args, "pure_train_score_calibrator_only", False)),
-        freeze_head=freeze_head_eff,
-        vggt_train_encoder=bool(args.vggt_train_encoder),
-        vggt_train_encoder_last_n_blocks=int(args.vggt_train_encoder_last_n_blocks),
+    use_two_stage = (
+        bool(getattr(args, "two_stage_training", False))
+        and bool(args.vggt_train_encoder)
+        and mm in ("vggt_progressive_replacement", "vggt_replacement_distill")
     )
-    optimizer = build_optimizer(model, lr=args.lr, encoder_lr_scale=args.encoder_lr_scale)
+    if bool(getattr(args, "two_stage_training", False)) and not bool(args.vggt_train_encoder):
+        logger.info("--two_stage_training 仅在同时指定 --vggt_train_encoder 时生效；本次按单阶段训练。")
+
+    total_epochs = (
+        int(args.stage1_epochs) + int(args.stage2_epochs) if use_two_stage else int(args.epochs)
+    )
+    encoder_lr_scale_stage2_effective: Optional[float] = None
+    if use_two_stage:
+        encoder_lr_scale_stage2_effective = min(float(args.encoder_lr_scale), 0.05)
+        if encoder_lr_scale_stage2_effective < float(args.encoder_lr_scale):
+            logger.info(
+                "两阶段 Stage2：encoder_lr_scale 从 %s 限制为 %s（上限 0.05）",
+                args.encoder_lr_scale,
+                encoder_lr_scale_stage2_effective,
+            )
+        logger.info(
+            "两阶段训练：stage1=%d + stage2=%d = %d 总 epoch（忽略 --epochs=%d）",
+            int(args.stage1_epochs),
+            int(args.stage2_epochs),
+            total_epochs,
+            int(args.epochs),
+        )
+        apply_alignment_freeze(
+            model,
+            mm,
+            pure_freeze_vpmodule=bool(getattr(args, "pure_freeze_vpmodule", False)),
+            pure_only_train_last_score_head=bool(getattr(args, "pure_only_train_last_score_head", False)),
+            pure_train_score_calibrator_only=bool(getattr(args, "pure_train_score_calibrator_only", False)),
+            freeze_head=freeze_head_eff,
+            vggt_train_encoder=False,
+            vggt_train_encoder_last_n_blocks=int(args.vggt_train_encoder_last_n_blocks),
+        )
+        optimizer = build_optimizer(model, lr=args.lr, encoder_lr_scale=args.encoder_lr_scale)
+        e_n, o_n, t_n = _trainable_param_stats(model)
+        print("=== Stage 1: Frozen encoder ===")
+        print(
+            "Trainable params: total=%d, encoder=%d, non-encoder=%d"
+            % (t_n, e_n, o_n)
+        )
+        print("encoder_lr=0.0 (frozen), head_lr=%s" % (args.lr,))
+    else:
+        apply_alignment_freeze(
+            model,
+            mm,
+            pure_freeze_vpmodule=bool(getattr(args, "pure_freeze_vpmodule", False)),
+            pure_only_train_last_score_head=bool(getattr(args, "pure_only_train_last_score_head", False)),
+            pure_train_score_calibrator_only=bool(getattr(args, "pure_train_score_calibrator_only", False)),
+            freeze_head=freeze_head_eff,
+            vggt_train_encoder=bool(args.vggt_train_encoder),
+            vggt_train_encoder_last_n_blocks=int(args.vggt_train_encoder_last_n_blocks),
+        )
+        optimizer = build_optimizer(model, lr=args.lr, encoder_lr_scale=args.encoder_lr_scale)
 
     meta_train: Dict[str, Any] = {
         "exp_name": args.exp_name,
@@ -606,7 +676,7 @@ def main():
         "encoder_type": getattr(model, "encoder_type", mm),
         "data_dir": args.data_dir,
         "camera": args.camera,
-        "epochs": args.epochs,
+        "epochs": total_epochs,
         "batch_size": args.batch_size,
         "lr": args.lr,
         "seed": args.seed,
@@ -694,11 +764,19 @@ def main():
         if mm in ("vggt_progressive_replacement", "vggt_replacement_distill")
         else None,
         "encoder_lr_scale": args.encoder_lr_scale,
+        "two_stage_training": bool(use_two_stage),
+        "stage1_epochs": int(args.stage1_epochs) if use_two_stage else None,
+        "stage2_epochs": int(args.stage2_epochs) if use_two_stage else None,
+        "encoder_lr_scale_stage2_effective": encoder_lr_scale_stage2_effective,
         "pipeline": "alignment_experiment_v1",
         "encoder_frozen": (
-            "partial_lora"
-            if bool(args.vggt_train_encoder) and mm in ("vggt_progressive_replacement", "vggt_replacement_distill")
-            else "yes"
+            "two_stage"
+            if use_two_stage
+            else (
+                "partial_lora"
+                if bool(args.vggt_train_encoder) and mm in ("vggt_progressive_replacement", "vggt_replacement_distill")
+                else "yes"
+            )
         ),
         "backbone_used": _backbone_used_tag(mm),
         "freeze_head": freeze_head_eff,
@@ -742,7 +820,9 @@ def main():
             json.dump(eval_before_train, f, indent=2, ensure_ascii=False)
 
     epoch_eval_rows: list[dict] = []
-    for epoch in range(args.epochs):
+
+    def run_one_epoch(epoch: int, total_ep: int, optim: torch.optim.Optimizer) -> None:
+        nonlocal final_val_loss
         set_alignment_train_state(
             model,
             mm,
@@ -754,7 +834,7 @@ def main():
         for batch in train_loader:
             pcs, _, _, metas = batch
             pcs = pcs.to(device)
-            optimizer.zero_grad()
+            optim.zero_grad()
             loss, log = compute_train_loss(
                 model=model,
                 point_cloud=pcs,
@@ -778,10 +858,10 @@ def main():
                 distill_task_weight=args.distill_task_weight,
             )
             loss.backward()
-            optimizer.step()
+            optim.step()
             ep_loss += log["loss_total"]
             n_batches += 1
-        logger.info("Epoch %d/%d train_loss_mean=%.6f", epoch + 1, args.epochs, ep_loss / max(n_batches, 1))
+        logger.info("Epoch %d/%d train_loss_mean=%.6f", epoch + 1, total_ep, ep_loss / max(n_batches, 1))
 
         if val_loader is not None and (epoch + 1) % max(args.val_every, 1) == 0:
             final_val_loss = evaluate_mean_val_loss(
@@ -849,6 +929,38 @@ def main():
                 )
             epoch_eval_rows.append(row)
 
+    if use_two_stage:
+        for epoch in range(int(args.stage1_epochs)):
+            run_one_epoch(epoch, total_epochs, optimizer)
+        assert encoder_lr_scale_stage2_effective is not None
+        apply_alignment_freeze(
+            model,
+            mm,
+            pure_freeze_vpmodule=bool(getattr(args, "pure_freeze_vpmodule", False)),
+            pure_only_train_last_score_head=bool(getattr(args, "pure_only_train_last_score_head", False)),
+            pure_train_score_calibrator_only=bool(getattr(args, "pure_train_score_calibrator_only", False)),
+            freeze_head=freeze_head_eff,
+            vggt_train_encoder=True,
+            vggt_train_encoder_last_n_blocks=int(args.vggt_train_encoder_last_n_blocks),
+        )
+        optimizer = build_optimizer(
+            model, lr=args.lr, encoder_lr_scale=float(encoder_lr_scale_stage2_effective)
+        )
+        e_n2, o_n2, t_n2 = _trainable_param_stats(model)
+        print("=== Stage 2: LoRA finetuning ===")
+        print(
+            "Trainable params: total=%d, encoder=%d, non-encoder=%d"
+            % (t_n2, e_n2, o_n2)
+        )
+        enc_lr_s2 = args.lr * float(encoder_lr_scale_stage2_effective)
+        print("encoder_lr=%s, head_lr=%s" % (enc_lr_s2, args.lr))
+        s1 = int(args.stage1_epochs)
+        for local_i in range(int(args.stage2_epochs)):
+            run_one_epoch(s1 + local_i, total_epochs, optimizer)
+    else:
+        for epoch in range(args.epochs):
+            run_one_epoch(epoch, total_epochs, optimizer)
+
     if val_loader is not None and final_val_loss is None:
         final_val_loss = evaluate_mean_val_loss(
             model,
@@ -870,7 +982,7 @@ def main():
         )
 
     meta_train["final_val_loss"] = final_val_loss
-    meta_train["steps_epochs"] = "%d epochs" % args.epochs
+    meta_train["steps_epochs"] = "%d epochs" % total_epochs
     meta_train["pure_freeze_vpmodule"] = bool(getattr(args, "pure_freeze_vpmodule", False))
     if eval_before_train:
         meta_train["eval_before_train_AP"] = eval_before_train.get("AP")
