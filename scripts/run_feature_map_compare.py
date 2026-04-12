@@ -13,6 +13,10 @@
 
 manifest 支持「字符串 ckpt 路径」或 ``{"type":"pretrained"|"checkpoint",...}``；
 示例见 analysis/feature_map_compare/checkpoint_manifest.example.json
+
+特征差分：默认按表示族内与各自 RAW 比较，输出绝对 ``compare_diff_family_<族>_l2.png``、相对 ``*_rel.png``、
+top 比例二值高亮 ``*_mask_top*pct*_l2.png`` 与 ``feature_diff_by_family.json``；
+``--enable_cross_model_diff`` 可额外生成全局单参考 legacy 版图（含 graspnet，非跨族可比）。
 """
 
 from __future__ import annotations
@@ -48,7 +52,14 @@ from analysis.feature_map_compare.summary_stats import (
     summarize_models,
     topk_distance_to_nearest_gt_translation,
 )
-from analysis.feature_map_compare.visualize_maps import save_comparison_grid, save_rgb_depth_mask_previews
+from analysis.feature_map_compare.visualize_maps import (
+    per_point_l2_diff_to_reference,
+    relative_l2_diff_maps,
+    representation_aware_family_diffs,
+    save_comparison_grid,
+    top_fraction_binary_masks,
+    save_rgb_depth_mask_previews,
+)
 from utils.batch_images import load_images_batch
 
 
@@ -167,9 +178,33 @@ def main():
     ap.add_argument(
         "--vggt_feature_mode",
         type=str,
-        default="dense768",
+        default="seed256",
         choices=("dense768", "seed256"),
-        help="VGGT 系：dense768=全图 world pt_mlp 768 再 NN 到 pc_common；seed256=vpmodule 前 256（与 GraspNet head 输入一致）",
+        help="VGGT：seed256=默认，与训练一致：pt_mlp→NN→replacement_projector→(progressive/distill 等)→vpmodule 前 256 维；"
+        "dense768=仅全图 pt_mlp768（不含 projector，旧对比用）",
+    )
+    ap.add_argument(
+        "--diff_ref_model",
+        type=str,
+        default="vggt_raw",
+        help="仅当启用 --enable_cross_model_diff 时有效：全局单参考 diff=||f_m-f_ref||_2（含 graspnet，非表示一致）",
+    )
+    ap.add_argument(
+        "--enable_cross_model_diff",
+        action="store_true",
+        help="额外输出「全局单参考」差分图（compare_diff_legacy_*.png），默认关闭；主输出为按族 RAW 参考的表示一致 diff",
+    )
+    ap.add_argument(
+        "--diff_rel_epsilon",
+        type=float,
+        default=1e-8,
+        help="相对差分分母：||f-f_raw|| / (||f_raw||+epsilon)",
+    )
+    ap.add_argument(
+        "--diff_top_fraction",
+        type=float,
+        default=0.1,
+        help="按逐点绝对 L2 差分取最高的 ceil(N*frac) 个点做二值高亮（0–1，默认 0.1 即约 top 10%%）",
     )
     ap.add_argument("--vggt_dense_max_points", type=int, default=80000)
     args = ap.parse_args()
@@ -204,6 +239,10 @@ def main():
                 "vggt_feature_mode": args.vggt_feature_mode,
                 "vggt_dense_max_points": args.vggt_dense_max_points,
                 "grasp_dist_threshold": args.grasp_dist_threshold,
+                "diff_ref_model": args.diff_ref_model,
+                "enable_cross_model_diff": args.enable_cross_model_diff,
+                "diff_rel_epsilon": args.diff_rel_epsilon,
+                "diff_top_fraction": args.diff_top_fraction,
             },
             f,
             indent=2,
@@ -545,6 +584,239 @@ def main():
                 azim=azim,
                 ncols=4,
             )
+
+    # 表示一致：按族 RAW 参考的逐点 ||f_m - f_ref||_2（族间不混比）
+    family_results, diff_report = representation_aware_family_diffs(feats_np)
+    diff_report["representation_aware"] = True
+    diff_by_family_json: Dict[str, Any] = {"families": {}, "global_report": diff_report}
+
+    for df_key, (diff_maps, fam_meta) in family_results.items():
+        entry: Dict[str, Any] = {
+            "diff_family": fam_meta.get("diff_family"),
+            "reference_model": fam_meta.get("reference_model"),
+            "skipped": fam_meta.get("skipped", {}),
+            "excluded_from_this_family": fam_meta.get("excluded_from_this_family", {}),
+            "error": fam_meta.get("error"),
+        }
+        if fam_meta.get("note"):
+            entry["note"] = fam_meta["note"]
+        if fam_meta.get("members_present") is not None:
+            entry["members_present"] = fam_meta["members_present"]
+
+        if diff_maps and not fam_meta.get("error"):
+            ref_name = str(fam_meta.get("reference_model") or "")
+            rel_maps = relative_l2_diff_maps(
+                feats_np, ref_name, diff_maps, epsilon=args.diff_rel_epsilon
+            )
+            mask_maps = top_fraction_binary_masks(
+                diff_maps, ref_name, top_fraction=args.diff_top_fraction
+            )
+            entry["diff_rel_epsilon"] = float(args.diff_rel_epsilon)
+            entry["diff_top_fraction"] = float(args.diff_top_fraction)
+            entry["per_model"] = {}
+            for m, vec in diff_maps.items():
+                v = np.asarray(vec, dtype=np.float64).ravel()
+                pm: Dict[str, Any] = {
+                    "mean_l2_diff": float(np.mean(v)),
+                    "std_l2_diff": float(np.std(v)),
+                    "max_l2_diff": float(np.max(v)),
+                }
+                if m in rel_maps:
+                    rv = np.asarray(rel_maps[m], dtype=np.float64).ravel()
+                    pm["mean_rel_diff"] = float(np.mean(rv))
+                    pm["std_rel_diff"] = float(np.std(rv))
+                    pm["max_rel_diff"] = float(np.max(rv))
+                if m in mask_maps:
+                    km = mask_maps[m]
+                    pm["top_diff_fraction"] = float(args.diff_top_fraction)
+                    pm["top_diff_point_count"] = int(np.sum(km > 0.5))
+                entry["per_model"][m] = pm
+
+            diff_panels: List = []
+            if rgb_img is not None:
+                diff_panels.append(("image", rgb_img, "RGB"))
+            for m in MODEL_PANEL_ORDER:
+                if m in diff_maps:
+                    diff_panels.append(
+                        (
+                            "pointcloud",
+                            pc_common,
+                            diff_maps[m],
+                            f"{m}  ||f-f_ref||  abs  family={df_key}  ref={ref_name}",
+                        )
+                    )
+            if len(diff_panels) > 1:
+                safe_df = df_key.replace(os.sep, "_").replace("/", "_")
+                save_comparison_grid(
+                    diff_panels,
+                    os.path.join(out_dir, f"compare_diff_family_{safe_df}_l2.png"),
+                    elev=elev,
+                    azim=azim,
+                    ncols=4,
+                )
+
+            rel_panels: List = []
+            if rgb_img is not None:
+                rel_panels.append(("image", rgb_img, "RGB"))
+            for m in MODEL_PANEL_ORDER:
+                if m in rel_maps:
+                    rel_panels.append(
+                        (
+                            "pointcloud",
+                            pc_common,
+                            rel_maps[m],
+                            f"{m}  rel=||Δf||/(||f_ref||+ε)  family={df_key}  ref={ref_name}",
+                        )
+                    )
+            if len(rel_panels) > 1:
+                safe_df = df_key.replace(os.sep, "_").replace("/", "_")
+                save_comparison_grid(
+                    rel_panels,
+                    os.path.join(out_dir, f"compare_diff_family_{safe_df}_rel.png"),
+                    elev=elev,
+                    azim=azim,
+                    ncols=4,
+                )
+
+            pct_label = f"{int(round(args.diff_top_fraction * 100))}pct"
+            mask_panels: List = []
+            if rgb_img is not None:
+                mask_panels.append(("image", rgb_img, "RGB"))
+            for m in MODEL_PANEL_ORDER:
+                if m in mask_maps:
+                    mask_panels.append(
+                        (
+                            "pointcloud_binary",
+                            pc_common,
+                            mask_maps[m],
+                            f"{m}  top-{pct_label} abs-diff mask  family={df_key}  ref={ref_name}",
+                        )
+                    )
+            if len(mask_panels) > 1:
+                safe_df = df_key.replace(os.sep, "_").replace("/", "_")
+                save_comparison_grid(
+                    mask_panels,
+                    os.path.join(out_dir, f"compare_diff_family_{safe_df}_mask_top{pct_label}_l2.png"),
+                    elev=elev,
+                    azim=azim,
+                    ncols=4,
+                )
+        elif fam_meta.get("error") and df_key != "graspnet":
+            print(f"[WARN] 特征差分（{df_key}）跳过: {fam_meta.get('error')}")
+
+        diff_by_family_json["families"][df_key] = entry
+
+    # 可选：全局单参考（含 graspnet），非表示一致，仅用于对照
+    if args.enable_cross_model_diff:
+        legacy_maps, legacy_meta = per_point_l2_diff_to_reference(feats_np, args.diff_ref_model)
+        legacy_block: Dict[str, Any] = {
+            "representation_aware": False,
+            "reference_model": args.diff_ref_model,
+            "skipped": legacy_meta.get("skipped", {}),
+            "error": legacy_meta.get("error"),
+            "note": "legacy single-reference diff; not representation-space aligned across families",
+        }
+        if legacy_maps and not legacy_meta.get("error"):
+            leg_ref = str(args.diff_ref_model)
+            legacy_rel = relative_l2_diff_maps(
+                feats_np, leg_ref, legacy_maps, epsilon=args.diff_rel_epsilon
+            )
+            legacy_masks = top_fraction_binary_masks(
+                legacy_maps, leg_ref, top_fraction=args.diff_top_fraction
+            )
+            legacy_block["diff_rel_epsilon"] = float(args.diff_rel_epsilon)
+            legacy_block["diff_top_fraction"] = float(args.diff_top_fraction)
+            legacy_block["per_model"] = {}
+            for m, vec in legacy_maps.items():
+                v = np.asarray(vec, dtype=np.float64).ravel()
+                pm: Dict[str, Any] = {
+                    "mean_l2_diff": float(np.mean(v)),
+                    "std_l2_diff": float(np.std(v)),
+                    "max_l2_diff": float(np.max(v)),
+                }
+                if m in legacy_rel:
+                    rv = np.asarray(legacy_rel[m], dtype=np.float64).ravel()
+                    pm["mean_rel_diff"] = float(np.mean(rv))
+                    pm["std_rel_diff"] = float(np.std(rv))
+                    pm["max_rel_diff"] = float(np.max(rv))
+                if m in legacy_masks:
+                    km = legacy_masks[m]
+                    pm["top_diff_fraction"] = float(args.diff_top_fraction)
+                    pm["top_diff_point_count"] = int(np.sum(km > 0.5))
+                legacy_block["per_model"][m] = pm
+            leg_panels: List = []
+            if rgb_img is not None:
+                leg_panels.append(("image", rgb_img, "RGB"))
+            for m in MODEL_PANEL_ORDER:
+                if m in legacy_maps:
+                    leg_panels.append(
+                        (
+                            "pointcloud",
+                            pc_common,
+                            legacy_maps[m],
+                            f"{m}  ||f-f_ref|| abs LEGACY ref={leg_ref}",
+                        )
+                    )
+            if leg_panels:
+                safe_ref = leg_ref.replace(os.sep, "_").replace("/", "_")
+                save_comparison_grid(
+                    leg_panels,
+                    os.path.join(out_dir, f"compare_diff_legacy_to_{safe_ref}_l2.png"),
+                    elev=elev,
+                    azim=azim,
+                    ncols=4,
+                )
+            leg_rel_panels: List = []
+            if rgb_img is not None:
+                leg_rel_panels.append(("image", rgb_img, "RGB"))
+            for m in MODEL_PANEL_ORDER:
+                if m in legacy_rel:
+                    leg_rel_panels.append(
+                        (
+                            "pointcloud",
+                            pc_common,
+                            legacy_rel[m],
+                            f"{m}  rel=||Δf||/(||f_ref||+ε) LEGACY ref={leg_ref}",
+                        )
+                    )
+            if len(leg_rel_panels) > 1:
+                safe_ref = leg_ref.replace(os.sep, "_").replace("/", "_")
+                save_comparison_grid(
+                    leg_rel_panels,
+                    os.path.join(out_dir, f"compare_diff_legacy_to_{safe_ref}_rel.png"),
+                    elev=elev,
+                    azim=azim,
+                    ncols=4,
+                )
+            pct_l = f"{int(round(args.diff_top_fraction * 100))}pct"
+            leg_mask_panels: List = []
+            if rgb_img is not None:
+                leg_mask_panels.append(("image", rgb_img, "RGB"))
+            for m in MODEL_PANEL_ORDER:
+                if m in legacy_masks:
+                    leg_mask_panels.append(
+                        (
+                            "pointcloud_binary",
+                            pc_common,
+                            legacy_masks[m],
+                            f"{m}  top-{pct_l} abs-diff mask LEGACY ref={leg_ref}",
+                        )
+                    )
+            if len(leg_mask_panels) > 1:
+                safe_ref = leg_ref.replace(os.sep, "_").replace("/", "_")
+                save_comparison_grid(
+                    leg_mask_panels,
+                    os.path.join(out_dir, f"compare_diff_legacy_to_{safe_ref}_mask_top{pct_l}_l2.png"),
+                    elev=elev,
+                    azim=azim,
+                    ncols=4,
+                )
+        elif legacy_meta.get("error"):
+            print(f"[WARN] legacy 特征差分图跳过: {legacy_meta.get('error')}")
+        diff_by_family_json["legacy_cross_model_diff"] = legacy_block
+
+    with open(os.path.join(out_dir, "feature_diff_by_family.json"), "w", encoding="utf-8") as f:
+        json.dump(diff_by_family_json, f, indent=2, ensure_ascii=False)
 
     # CSV 简要导出
     rows = []

@@ -13,7 +13,8 @@
         1024
       ],
       "alignment": "nearest_neighbor_in_normalize_xyz_with_pc_space",
-      "feature_dim": 256
+      "feature_dim": 256,
+      "feature_stage": "graspnet_backbone_seed256_pre_vpmodule"
     }
   },
   {
@@ -21,19 +22,8 @@
     "load_type": "pretrained",
     "source": "facebook/VGGT-1B",
     "checkpoint": null,
-    "status": "ok",
-    "meta": {
-      "layer": "encoder.backbone['world_points'] + encoder.pt_mlp",
-      "conf_thresh": 0.05,
-      "max_points": 80000,
-      "M_used": 50176,
-      "original_M": 50176,
-      "feature_dim": 768,
-      "subsample": "topk_confidence",
-      "alignment": "nearest_neighbor_world_pt_mlp_768_to_pc_common",
-      "warning_if_interpreting_progressive": "World 768-D 不包含 seed 空间中的 α 混合；对比 progressive/distill 请用 seed256 模式。",
-      "model_name": "vggt_raw"
-    }
+    "status": "extract_error",
+    "error": "local variable 'seed_features' referenced before assignment"
   },
   {
     "model": "vggt_progressive_alpha05",
@@ -42,16 +32,16 @@
     "checkpoint": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/vggt_progressive_alpha050/vggt_progressive_alpha050_vggt_progressive_replacement_20260403_095331.pt",
     "status": "ok",
     "meta": {
-      "layer": "encoder.backbone['world_points'] + encoder.pt_mlp",
-      "conf_thresh": 0.05,
-      "max_points": 80000,
-      "M_used": 50176,
-      "original_M": 50176,
-      "feature_dim": 768,
-      "subsample": "topk_confidence",
-      "alignment": "nearest_neighbor_world_pt_mlp_768_to_pc_common",
-      "warning_if_interpreting_progressive": "World 768-D 不包含 seed 空间中的 α 混合；对比 progressive/distill 请用 seed256 模式。",
-      "model_name": "vggt_progressive_alpha05"
+      "checkpoint_tensor": "(1-a)*f_graspnet+a*adapter(LN(proj(vggt_raw))), a=0.5",
+      "original_shape": [
+        1,
+        256,
+        1024
+      ],
+      "alignment": "nearest_neighbor_in_normalize_xyz_with_pc_space (seed_xyz refs)",
+      "feature_dim": 256,
+      "variant": "vggt_progressive",
+      "feature_stage": "pre_vpmodule_seed256_post_projector_and_mixing"
     }
   },
   {
@@ -61,16 +51,16 @@
     "checkpoint": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/vggt_replacement_distill_w1_t0/vggt_replacement_distill_w1_t0_vggt_replacement_distill_20260403_094600.pt",
     "status": "ok",
     "meta": {
-      "layer": "encoder.backbone['world_points'] + encoder.pt_mlp",
-      "conf_thresh": 0.05,
-      "max_points": 80000,
-      "M_used": 50176,
-      "original_M": 50176,
-      "feature_dim": 768,
-      "subsample": "topk_confidence",
-      "alignment": "nearest_neighbor_world_pt_mlp_768_to_pc_common",
-      "warning_if_interpreting_progressive": "World 768-D 不包含 seed 空间中的 α 混合；对比 progressive/distill 请用 seed256 模式。",
-      "model_name": "vggt_distill"
+      "checkpoint_tensor": "distill_adapter(LN(distill_projector(vggt_raw))) -> vpmodule (student path)",
+      "original_shape": [
+        1,
+        256,
+        1024
+      ],
+      "alignment": "nearest_neighbor_in_normalize_xyz_with_pc_space (seed_xyz refs)",
+      "feature_dim": 256,
+      "variant": "vggt_distill",
+      "feature_stage": "pre_vpmodule_seed256_post_projector_and_mixing"
     }
   },
   {
@@ -80,16 +70,16 @@
     "checkpoint": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/vggt_prog_fusion_a050/vggt_prog_fusion_a050_vggt_progressive_fusion_20260408_064227.pt",
     "status": "ok",
     "meta": {
-      "layer": "encoder.backbone['world_points'] + encoder.pt_mlp",
-      "conf_thresh": 0.05,
-      "max_points": 80000,
-      "M_used": 50176,
-      "original_M": 50176,
-      "feature_dim": 768,
-      "subsample": "topk_confidence",
-      "alignment": "nearest_neighbor_world_pt_mlp_768_to_pc_common",
-      "warning_if_interpreting_progressive": "World 768-D 不包含 seed 空间中的 α 混合；对比 progressive/distill 请用 seed256 模式。",
-      "model_name": "vggt_fusion_progressive_alpha05"
+      "checkpoint_tensor": "fusion progressive (1-a)*f_graspnet+a*fusion_adapter(LN(fusion_proj(vggt_raw)))",
+      "original_shape": [
+        1,
+        256,
+        1024
+      ],
+      "alignment": "nearest_neighbor_in_normalize_xyz_with_pc_space (seed_xyz refs)",
+      "feature_dim": 256,
+      "variant": "vggt_fusion_progressive",
+      "feature_stage": "pre_vpmodule_seed256_post_projector_and_mixing"
     }
   },
   {
@@ -99,16 +89,16 @@
     "checkpoint": "/home/ziyaochen/gc6d_grasp_pipeline/checkpoints/alignment_runs/vggt_prog_enc_lora/vggt_prog_enc_lora_vggt_progressive_replacement_20260407_085526.pt",
     "status": "ok",
     "meta": {
-      "layer": "encoder.backbone['world_points'] + encoder.pt_mlp",
-      "conf_thresh": 0.05,
-      "max_points": 80000,
-      "M_used": 50176,
-      "original_M": 50176,
-      "feature_dim": 768,
-      "subsample": "topk_confidence",
-      "alignment": "nearest_neighbor_world_pt_mlp_768_to_pc_common",
-      "warning_if_interpreting_progressive": "World 768-D 不包含 seed 空间中的 α 混合；对比 progressive/distill 请用 seed256 模式。",
-      "model_name": "vggt_prog_enc_lora"
+      "checkpoint_tensor": "(1-a)*f_graspnet+a*adapter(LN(proj(vggt_raw))), a=0.5",
+      "original_shape": [
+        1,
+        256,
+        1024
+      ],
+      "alignment": "nearest_neighbor_in_normalize_xyz_with_pc_space (seed_xyz refs)",
+      "feature_dim": 256,
+      "variant": "vggt_prog_enc_lora",
+      "feature_stage": "pre_vpmodule_seed256_post_projector_and_mixing"
     }
   },
   {
@@ -126,7 +116,8 @@
       ],
       "alignment": "NN on seeds from lift3d patch centers (768->256)",
       "feature_dim": 256,
-      "progressive": false
+      "progressive": false,
+      "feature_stage": "pre_vpmodule_seed256_post_projector_and_mixing"
     }
   },
   {
@@ -144,7 +135,8 @@
       ],
       "alignment": "NN on seeds from lift3d patch centers (768->256)",
       "feature_dim": 256,
-      "progressive": true
+      "progressive": true,
+      "feature_stage": "pre_vpmodule_seed256_post_projector_and_mixing"
     }
   },
   {
@@ -162,7 +154,8 @@
       ],
       "alignment": "nearest_neighbor seeds -> pc_common",
       "feature_dim": 256,
-      "progressive": false
+      "progressive": false,
+      "feature_stage": "pre_vpmodule_seed256_post_projector_and_mixing"
     }
   },
   {
@@ -180,7 +173,8 @@
       ],
       "alignment": "nearest_neighbor seeds -> pc_common",
       "feature_dim": 256,
-      "progressive": true
+      "progressive": true,
+      "feature_stage": "pre_vpmodule_seed256_post_projector_and_mixing"
     }
   }
 ]

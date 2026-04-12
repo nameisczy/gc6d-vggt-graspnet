@@ -8,7 +8,11 @@
   "graspnet_ckpt": "/home/ziyaochen/graspnet-baseline/logs/log_rs/checkpoint-rs.tar",
   "pc_num_points": 2048,
   "pc_seed": 0,
-  "vggt_feature_mode": "dense768",
+  "vggt_feature_mode": "seed256",
   "vggt_dense_max_points": 80000,
-  "grasp_dist_threshold": 0.02
+  "grasp_dist_threshold": 0.02,
+  "diff_ref_model": "vggt_raw",
+  "enable_cross_model_diff": false,
+  "diff_rel_epsilon": 1e-08,
+  "diff_top_fraction": 0.1
 }

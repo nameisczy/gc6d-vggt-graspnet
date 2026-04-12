@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 各模型在 pc_common 上的可比特征：统一记录 layer 名称、对齐方式与张量形状。
+
+默认与训练/推理一致的可视化目标为 **适配后、进入 vpmodule 之前** 的 seed 特征（通常 256 维）：
+
+- **VGGT（``vggt_mode=seed256``）**：``pt_mlp`` 采样点 768 → NN 对齐到 seed → ``replacement_projector`` →
+  （progressive / distill / fusion 等）→ 与 ``forward`` 中 ``vpmodule`` 输入一致。
+- **Lift3D-CLIP / DINOv2**：``replacement_projector`` 后及 progressive 分支后的 seed 特征。
+- **dense768** 模式仅作可选对照（全图 ``pt_mlp`` 768，不含 projector），不用作默认可训练特征对比。
 """
 
 from __future__ import annotations
@@ -223,6 +230,7 @@ def extract_vggt_family_dense_world(
     feat_on_pc = nn_assign_features_world(point_cloud, pc_common, wp_used, ref_feat)
     meta = dict(mmeta)
     meta["alignment"] = "nearest_neighbor_world_pt_mlp_768_to_pc_common"
+    meta["feature_stage"] = "dense_pt_mlp_only_legacy"
     meta["warning_if_interpreting_progressive"] = (
         "World 768-D 不包含 seed 空间中的 α 混合；对比 progressive/distill 请用 seed256 模式。"
     )
@@ -249,6 +257,7 @@ def extract_graspnet_backbone_features(
             "original_shape": list(seed_features.shape),
             "alignment": "nearest_neighbor_in_normalize_xyz_with_pc_space",
             "feature_dim": int(feat_on_pc.shape[-1]),
+            "feature_stage": "graspnet_backbone_seed256_pre_vpmodule",
         },
     }
 
@@ -312,6 +321,7 @@ def extract_vggt_variant_pre_vpmodule(
             "alignment": "nearest_neighbor_in_normalize_xyz_with_pc_space (seed_xyz refs)",
             "feature_dim": 256,
             "variant": variant,
+            "feature_stage": "pre_vpmodule_seed256_post_projector_and_mixing",
         },
     }
 
@@ -358,6 +368,7 @@ def extract_lift3d_clip_variant(
             "alignment": "NN on seeds from lift3d patch centers (768->256)",
             "feature_dim": 256,
             "progressive": progressive,
+            "feature_stage": "pre_vpmodule_seed256_post_projector_and_mixing",
         },
     }
 
@@ -397,6 +408,7 @@ def extract_dinov2_variant(
             "alignment": "nearest_neighbor seeds -> pc_common",
             "feature_dim": 256,
             "progressive": progressive,
+            "feature_stage": "pre_vpmodule_seed256_post_projector_and_mixing",
         },
     }
 
@@ -411,7 +423,7 @@ def extract_by_model_name(
     vggt_mode: str = "seed256",
     vggt_dense_max_points: int = 80000,
 ) -> Dict[str, Any]:
-    """model_name 与实验命名一致。``vggt_mode``: ``seed256`` | ``dense768``。"""
+    """model_name 与实验命名一致。``vggt_mode``: ``seed256``（默认，适配后 seed）| ``dense768``（仅 pt_mlp 稠密对照）。"""
     _freeze(model)
 
     if model_name == "graspnet_backbone":
