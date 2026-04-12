@@ -17,6 +17,11 @@ manifest 支持「字符串 ckpt 路径」或 ``{"type":"pretrained"|"checkpoint
 特征差分：默认按表示族内与各自 RAW 比较，输出绝对 ``compare_diff_family_<族>_l2.png``、相对 ``*_rel.png``、
 top 比例二值高亮 ``*_mask_top*pct*_l2.png`` 与 ``feature_diff_by_family.json``；
 ``--enable_cross_model_diff`` 可额外生成全局单参考 legacy 版图（含 graspnet，非跨族可比）。
+
+Grasp 对齐：若 npz 含 ``gt_grasp_group``，输出 ``compare_grasp_aligned_featnorm.png``（逐点特征范数 turbo + 距最近 GT 平移
+< ``--grasp_dist_threshold`` 的红色高亮）与 ``grasp_aligned_featnorm_meta.json``。
+
+``--global_norm_for_featvis``：L2 与 grasp 对齐图中特征范数色标在已加载模型间共用 min–max（子图标题带 ``[global ||·||]``）。
 """
 
 from __future__ import annotations
@@ -48,11 +53,13 @@ from analysis.feature_map_compare.summary_stats import (
     l2_norm_per_point,
     pairwise_pearson_feature_norms,
     pca_first_component,
+    per_point_min_dist_to_gt_translations,
     save_summary_json,
     summarize_models,
     topk_distance_to_nearest_gt_translation,
 )
 from analysis.feature_map_compare.visualize_maps import (
+    global_feat_norm_range_from_models,
     per_point_l2_diff_to_reference,
     relative_l2_diff_maps,
     representation_aware_family_diffs,
@@ -206,6 +213,11 @@ def main():
         default=0.1,
         help="按逐点绝对 L2 差分取最高的 ceil(N*frac) 个点做二值高亮（0–1，默认 0.1 即约 top 10%%）",
     )
+    ap.add_argument(
+        "--global_norm_for_featvis",
+        action="store_true",
+        help="特征范数可视化（L2 主图、子组、grasp 对齐）在 MODEL_PANEL_ORDER 已加载模型上共用 min–max 色标，而非逐子图拉伸",
+    )
     ap.add_argument("--vggt_dense_max_points", type=int, default=80000)
     args = ap.parse_args()
 
@@ -243,6 +255,7 @@ def main():
                 "enable_cross_model_diff": args.enable_cross_model_diff,
                 "diff_rel_epsilon": args.diff_rel_epsilon,
                 "diff_top_fraction": args.diff_top_fraction,
+                "global_norm_for_featvis": args.global_norm_for_featvis,
             },
             f,
             indent=2,
@@ -536,6 +549,11 @@ def main():
     def panel_tuple(name: str, score_vec: np.ndarray) -> Tuple:
         return ("pointcloud", pc_common, score_vec, name)
 
+    feat_norm_global_range = None
+    if args.global_norm_for_featvis and feats_l2:
+        feat_norm_global_range = global_feat_norm_range_from_models(feats_l2, MODEL_PANEL_ORDER)
+    fn_scale_tag = " [global ||·||]" if feat_norm_global_range is not None else ""
+
     # 主图
     panels_main: List = []
     if rgb_img is not None:
@@ -544,7 +562,7 @@ def main():
         panels_main.append(("image", depth_img, "Depth"))
     for m in MODEL_PANEL_ORDER:
         if m in feats_l2:
-            panels_main.append(panel_tuple(m + " (L2)", feats_l2[m]))
+            panels_main.append(panel_tuple(m + f" (L2){fn_scale_tag}", feats_l2[m]))
     if len(panels_main) > 0:
         save_comparison_grid(
             panels_main,
@@ -552,7 +570,68 @@ def main():
             elev=elev,
             azim=azim,
             ncols=4,
+            feat_norm_global_range=feat_norm_global_range,
         )
+
+    # Grasp 对齐：逐点距最近 GT 抓取平移的距离；特征范数 turbo + 距离 < 阈值 红色覆盖
+    gt_viz = None
+    if "gt_grasp_group" in data:
+        _gg = np.asarray(data["gt_grasp_group"], dtype=np.float32)
+        if _gg.size > 0 and _gg.ndim == 2 and _gg.shape[1] >= 16:
+            gt_viz = _gg
+    grasp_dmin = per_point_min_dist_to_gt_translations(pc_common, gt_viz) if gt_viz is not None else None
+    if grasp_dmin is not None and feats_l2:
+        thr_ga = float(args.grasp_dist_threshold)
+        ga_panels: List = []
+        if rgb_img is not None:
+            ga_panels.append(("image", rgb_img, "RGB"))
+        for m in MODEL_PANEL_ORDER:
+            if m in feats_l2:
+                ga_panels.append(
+                    (
+                        "pointcloud_grasp_align",
+                        pc_common,
+                        feats_l2[m],
+                        grasp_dmin,
+                        thr_ga,
+                        f"{m}  feat||·||{fn_scale_tag} + near-GT grasp <{thr_ga}m → red",
+                    )
+                )
+        if any(p[0] == "pointcloud_grasp_align" for p in ga_panels):
+            save_comparison_grid(
+                ga_panels,
+                os.path.join(out_dir, "compare_grasp_aligned_featnorm.png"),
+                elev=elev,
+                azim=azim,
+                ncols=4,
+                feat_norm_global_range=feat_norm_global_range,
+            )
+        with open(os.path.join(out_dir, "grasp_aligned_featnorm_meta.json"), "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "grasp_dist_threshold_m": thr_ga,
+                    "num_gt_grasps": int(gt_viz.shape[0]),
+                    "gt_translation_indices_in_grasp_row": "13:16",
+                    "per_point_min_dist_to_nearest_gt_translation_m": {
+                        "mean": float(np.mean(grasp_dmin)),
+                        "std": float(np.std(grasp_dmin)),
+                        "frac_points_below_threshold": float(np.mean(grasp_dmin < thr_ga)),
+                    },
+                    "feat_norm_color_scale": (
+                        {
+                            "mode": "global_minmax_across_models",
+                            "min": feat_norm_global_range[0],
+                            "max": feat_norm_global_range[1],
+                        }
+                        if feat_norm_global_range is not None
+                        else {"mode": "per_panel_minmax"}
+                    ),
+                    "visualization": "turbo = per-point L2 feature norm; red = dist to nearest GT translation < threshold",
+                },
+                f,
+                indent=2,
+                ensure_ascii=False,
+            )
 
     pca_panels: List = []
     if rgb_img is not None:
@@ -575,7 +654,7 @@ def main():
             sub.append(("image", rgb_img, "RGB"))
         for m in mlist:
             if m in feats_l2:
-                sub.append(panel_tuple(m, feats_l2[m]))
+                sub.append(panel_tuple(m + fn_scale_tag, feats_l2[m]))
         if sub:
             save_comparison_grid(
                 sub,
@@ -583,6 +662,7 @@ def main():
                 elev=elev,
                 azim=azim,
                 ncols=4,
+                feat_norm_global_range=feat_norm_global_range,
             )
 
     # 表示一致：按族 RAW 参考的逐点 ||f_m - f_ref||_2（族间不混比）

@@ -99,6 +99,25 @@ def gt_nearest_pc_common_mapping(
     }
 
 
+def per_point_min_dist_to_gt_translations(
+    pc_common: np.ndarray,
+    gt_grasps_17: np.ndarray,
+) -> Optional[np.ndarray]:
+    """
+    每个 ``pc_common`` 点到**任意** GT 抓取平移（17D 行中 13:16）的最小欧氏距离，形状 ``(N,)``。
+    用于 grasp 对齐可视化：与 ``gt_nearest_pc_common_mapping`` 使用同一平移定义。
+    """
+    if gt_grasps_17 is None or gt_grasps_17.size == 0:
+        return None
+    g = np.asarray(gt_grasps_17, dtype=np.float64)
+    if g.ndim != 2 or g.shape[1] < 16:
+        return None
+    T = g[:, 13:16]
+    pc = np.asarray(pc_common, dtype=np.float64)
+    d = np.linalg.norm(pc[:, None, :] - T[None, :, :], axis=2)
+    return np.min(d, axis=1).astype(np.float64)
+
+
 def topk_distance_to_nearest_gt_translation(
     pc_common: np.ndarray,
     gt_grasps_17: np.ndarray,

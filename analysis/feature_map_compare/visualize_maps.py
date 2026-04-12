@@ -268,6 +268,66 @@ def normalize_scores(s: np.ndarray) -> np.ndarray:
     return (s - lo) / (hi - lo)
 
 
+def normalize_scores_with_range(s: np.ndarray, lo: float, hi: float) -> np.ndarray:
+    """用固定 ``[lo, hi]`` 将标量映射到 ``[0, 1]``（clip），用于跨模型共用色标。"""
+    s = np.asarray(s, dtype=np.float64).ravel()
+    lo, hi = float(lo), float(hi)
+    if hi - lo < 1e-12:
+        return np.zeros_like(s, dtype=np.float64)
+    return np.clip((s - lo) / (hi - lo), 0.0, 1.0)
+
+
+def global_feat_norm_range_from_models(
+    feats_l2: Dict[str, np.ndarray],
+    model_order: Sequence[str],
+) -> Optional[Tuple[float, float]]:
+    """在 ``model_order`` 中已出现的模型上，对所有逐点范数取全局 min/max。"""
+    parts: List[np.ndarray] = []
+    for m in model_order:
+        if m in feats_l2:
+            parts.append(np.asarray(feats_l2[m], dtype=np.float64).ravel())
+    if not parts:
+        return None
+    allv = np.concatenate(parts)
+    if allv.size == 0:
+        return None
+    return float(allv.min()), float(allv.max())
+
+
+def rgb_feat_norm_with_grasp_highlight(
+    feat_norm: np.ndarray,
+    dist_to_gt: np.ndarray,
+    *,
+    grasp_radius: float,
+    feat_norm_global_range: Optional[Tuple[float, float]] = None,
+) -> np.ndarray:
+    """
+    逐点 RGB：特征范数用 turbo 映射；距最近 GT 平移 < grasp_radius 的点改为红色高亮。
+    ``feat_norm_global_range`` 若给定，则范数按全局 (min,max) 映射到 [0,1]，否则逐向量 min-max。
+    """
+    fn = np.asarray(feat_norm, dtype=np.float64).ravel()
+    d = np.asarray(dist_to_gt, dtype=np.float64).ravel()
+    if fn.shape != d.shape:
+        raise ValueError("feat_norm 与 dist_to_gt 长度须一致")
+    if feat_norm_global_range is not None:
+        glo, ghi = feat_norm_global_range
+        u = normalize_scores_with_range(fn, glo, ghi)
+    else:
+        u = normalize_scores(fn)
+    pl = _ensure_plt()
+    try:
+        cmap = pl.colormaps["turbo"]
+    except (AttributeError, KeyError):
+        cmap = pl.cm.get_cmap("turbo")
+    rgba = np.asarray(cmap(u), dtype=np.float64)
+    rgb = rgba[:, :3].copy()
+    near = d < float(grasp_radius)
+    rgb[near, 0] = 0.92
+    rgb[near, 1] = 0.14
+    rgb[near, 2] = 0.11
+    return rgb
+
+
 def scatter_pc_color(
     xyz: np.ndarray,
     color: np.ndarray,
@@ -357,12 +417,17 @@ def save_comparison_grid(
     azim: float = -60.0,
     ncols: int = 4,
     figsize_per: Tuple[float, float] = (3.2, 3.0),
+    feat_norm_global_range: Optional[Tuple[float, float]] = None,
 ):
     """
     panels 每项为以下之一：
     - ("pointcloud", xyz, score, title)
     - ("pointcloud_binary", xyz, mask, title)  mask: (N,) 0/1 二值高亮
+    - ("pointcloud_grasp_align", xyz, feat_norm, dist_to_gt, grasp_radius, title)
     - ("image", img, title)  img: HxW 或 HxWx3 float32/float64 uint8
+
+    ``feat_norm_global_range``：对 pointcloud / pointcloud_grasp_align 中特征范数着色使用共用 (min,max)，
+    若为 None 则 pointcloud 仍按子图内 min-max（与旧行为一致）。
     """
     pl = _ensure_plt()
     n = len(panels)
@@ -375,7 +440,14 @@ def save_comparison_grid(
         if kind == "pointcloud":
             _, xyz, sc, title = pan
             ax = fig.add_subplot(nrows, ncols, i + 1, projection="3d")
-            c = normalize_scores(np.asarray(sc).ravel())
+            if feat_norm_global_range is not None:
+                c = normalize_scores_with_range(
+                    np.asarray(sc).ravel(),
+                    feat_norm_global_range[0],
+                    feat_norm_global_range[1],
+                )
+            else:
+                c = normalize_scores(np.asarray(sc).ravel())
             p = ax.scatter(xyz[:, 0], xyz[:, 1], xyz[:, 2], c=c, cmap="turbo", s=1.5, alpha=0.85)
             ax.view_init(elev=elev, azim=azim)
             ax.set_title(title, fontsize=8)
@@ -393,6 +465,26 @@ def save_comparison_grid(
                 c=rgb,
                 s=1.8,
                 alpha=0.9,
+            )
+            ax.view_init(elev=elev, azim=azim)
+            ax.set_title(title, fontsize=8)
+            ax.set_box_aspect((1, 1, 1))
+        elif kind == "pointcloud_grasp_align":
+            _, xyz, feat_norm, dist_to_gt, grasp_r, title = pan
+            rgb = rgb_feat_norm_with_grasp_highlight(
+                feat_norm,
+                dist_to_gt,
+                grasp_radius=float(grasp_r),
+                feat_norm_global_range=feat_norm_global_range,
+            )
+            ax = fig.add_subplot(nrows, ncols, i + 1, projection="3d")
+            ax.scatter(
+                xyz[:, 0],
+                xyz[:, 1],
+                xyz[:, 2],
+                c=np.clip(rgb, 0, 1),
+                s=1.5,
+                alpha=0.88,
             )
             ax.view_init(elev=elev, azim=azim)
             ax.set_title(title, fontsize=8)
