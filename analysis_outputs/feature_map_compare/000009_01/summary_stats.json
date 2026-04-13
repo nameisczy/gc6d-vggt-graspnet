@@ -5,8 +5,8 @@
       "l2_norm_std": 2.0165512561798096
     },
     "vggt_raw": {
-      "l2_norm_mean": 0.6413275599479675,
-      "l2_norm_std": 0.006104676518589258
+      "l2_norm_mean": 0.6585082411766052,
+      "l2_norm_std": 0.0068931677378714085
     },
     "vggt_progressive_alpha05": {
       "l2_norm_mean": 4.486776828765869,
@@ -25,16 +25,16 @@
       "l2_norm_std": 0.9064760208129883
     },
     "lift3d_clip_raw": {
-      "l2_norm_mean": 3.3100404739379883,
-      "l2_norm_std": 0.0973871499300003
+      "l2_norm_mean": 3.4441192150115967,
+      "l2_norm_std": 0.0918610617518425
     },
     "lift3d_clip_progressive_alpha05": {
-      "l2_norm_mean": 5.867038249969482,
-      "l2_norm_std": 1.4877731800079346
+      "l2_norm_mean": 5.8740034103393555,
+      "l2_norm_std": 1.4869991540908813
     },
     "lift3d_dinov2_raw": {
-      "l2_norm_mean": 5.823729515075684,
-      "l2_norm_std": 0.33711522817611694
+      "l2_norm_mean": 5.526500701904297,
+      "l2_norm_std": 0.2978653907775879
     },
     "lift3d_dinov2_progressive_alpha05": {
       "l2_norm_mean": 4.336020469665527,
@@ -96,56 +96,56 @@
       1795
     ],
     "vggt_raw": [
-      1447,
-      1125,
       1914,
-      969,
-      974,
-      973,
-      971,
-      1057,
-      965,
-      906,
-      907,
-      876,
-      880,
-      881,
-      882,
-      883,
-      886,
-      890,
-      891,
-      892,
-      898,
-      900,
-      902,
-      903,
-      980,
-      984,
-      991,
-      1060,
-      1055,
-      1053,
-      1048,
-      1044,
-      1043,
-      1042,
-      1041,
-      1039,
-      1033,
-      985,
-      1028,
-      1025,
-      1024,
-      1022,
-      1017,
-      1016,
-      1015,
-      1012,
-      1002,
-      998,
-      1027,
-      949
+      1125,
+      1447,
+      369,
+      604,
+      1700,
+      1707,
+      959,
+      1126,
+      1318,
+      1142,
+      1801,
+      474,
+      136,
+      381,
+      869,
+      1785,
+      1312,
+      875,
+      377,
+      878,
+      879,
+      371,
+      609,
+      1122,
+      1330,
+      905,
+      1719,
+      1716,
+      1357,
+      948,
+      490,
+      212,
+      1098,
+      1634,
+      583,
+      935,
+      1687,
+      1352,
+      1655,
+      1658,
+      1662,
+      193,
+      923,
+      1105,
+      361,
+      912,
+      1334,
+      1351,
+      1729
     ],
     "vggt_progressive_alpha05": [
       629,
@@ -356,56 +356,56 @@
       1795
     ],
     "lift3d_clip_raw": [
-      1092,
-      1391,
-      612,
-      1007,
-      369,
-      1928,
-      1463,
-      1899,
-      474,
-      1877,
-      490,
-      93,
-      1105,
-      501,
-      397,
-      1415,
-      321,
-      402,
-      1944,
-      1855,
-      320,
-      1122,
-      1807,
-      1933,
-      310,
-      761,
-      664,
-      1000,
-      990,
-      1707,
-      961,
-      1010,
-      1716,
-      1719,
-      923,
-      1977,
-      2022,
-      905,
-      1,
-      1312,
-      1687,
-      879,
-      875,
-      1746,
-      1582,
-      806,
-      767,
-      157,
-      127,
-      1177
+      2030,
+      1808,
+      1672,
+      1115,
+      1511,
+      1925,
+      207,
+      493,
+      1564,
+      1756,
+      31,
+      1310,
+      1313,
+      1425,
+      286,
+      1454,
+      1955,
+      413,
+      1718,
+      507,
+      618,
+      1734,
+      994,
+      638,
+      1008,
+      647,
+      407,
+      1969,
+      403,
+      1896,
+      899,
+      1121,
+      631,
+      275,
+      1936,
+      1149,
+      1973,
+      1705,
+      1783,
+      190,
+      1112,
+      180,
+      1293,
+      1376,
+      105,
+      86,
+      1486,
+      1011,
+      734,
+      931
     ],
     "lift3d_clip_progressive_alpha05": [
       629,
@@ -415,15 +415,15 @@
       685,
       2031,
       1562,
+      1663,
+      1886,
+      574,
       1109,
       1531,
       2040,
-      1245,
       259,
       299,
-      1886,
-      1663,
-      574,
+      1245,
       799,
       56,
       474,
@@ -433,9 +433,9 @@
       1000,
       1415,
       175,
-      1755,
       1630,
       1692,
+      1755,
       1565,
       1146,
       969,
@@ -444,72 +444,72 @@
       401,
       372,
       358,
-      989,
-      68,
-      956,
-      235,
-      846,
-      336,
-      1084,
-      836,
-      819,
-      1633,
-      1703,
       1243,
       1479,
+      1703,
+      1633,
+      846,
+      819,
+      336,
+      989,
+      235,
+      1084,
+      68,
+      836,
+      956,
       1795
     ],
     "lift3d_dinov2_raw": [
-      435,
-      834,
-      1588,
-      1603,
-      376,
-      1078,
-      8,
-      2017,
-      1332,
-      63,
-      1769,
-      1417,
-      367,
-      820,
-      587,
-      1272,
-      724,
-      1939,
-      989,
-      1084,
-      956,
-      836,
-      1633,
-      235,
-      68,
-      819,
-      336,
-      846,
-      961,
-      474,
-      806,
-      1415,
-      1000,
-      1719,
-      843,
-      1606,
-      889,
-      584,
-      1371,
-      409,
-      1240,
-      194,
-      695,
-      1459,
-      954,
-      603,
-      1636,
-      95,
-      1311,
-      406
+      1213,
+      747,
+      1173,
+      1056,
+      1776,
+      572,
+      1461,
+      1535,
+      7,
+      1074,
+      908,
+      357,
+      1126,
+      1131,
+      476,
+      1284,
+      1644,
+      1125,
+      1447,
+      534,
+      1103,
+      1770,
+      1514,
+      1522,
+      1030,
+      1427,
+      1510,
+      1648,
+      1230,
+      1814,
+      1993,
+      832,
+      1613,
+      783,
+      1738,
+      2027,
+      1355,
+      98,
+      359,
+      865,
+      562,
+      1571,
+      1914,
+      1597,
+      1825,
+      87,
+      672,
+      706,
+      1747,
+      1911
     ],
     "lift3d_dinov2_progressive_alpha05": [
       44,
@@ -568,7 +568,7 @@
     {
       "a": "graspnet_backbone",
       "b": "vggt_raw",
-      "overlap_ratio": 0.02
+      "overlap_ratio": 0.04
     },
     {
       "a": "graspnet_backbone",
@@ -593,7 +593,7 @@
     {
       "a": "graspnet_backbone",
       "b": "lift3d_clip_raw",
-      "overlap_ratio": 0.12
+      "overlap_ratio": 0.0
     },
     {
       "a": "graspnet_backbone",
@@ -603,7 +603,7 @@
     {
       "a": "graspnet_backbone",
       "b": "lift3d_dinov2_raw",
-      "overlap_ratio": 0.32
+      "overlap_ratio": 0.0
     },
     {
       "a": "graspnet_backbone",
@@ -613,7 +613,7 @@
     {
       "a": "vggt_raw",
       "b": "vggt_progressive_alpha05",
-      "overlap_ratio": 0.02
+      "overlap_ratio": 0.04
     },
     {
       "a": "vggt_raw",
@@ -623,12 +623,12 @@
     {
       "a": "vggt_raw",
       "b": "vggt_fusion_progressive_alpha05",
-      "overlap_ratio": 0.02
+      "overlap_ratio": 0.04
     },
     {
       "a": "vggt_raw",
       "b": "vggt_prog_enc_lora",
-      "overlap_ratio": 0.02
+      "overlap_ratio": 0.04
     },
     {
       "a": "vggt_raw",
@@ -638,17 +638,17 @@
     {
       "a": "vggt_raw",
       "b": "lift3d_clip_progressive_alpha05",
-      "overlap_ratio": 0.02
+      "overlap_ratio": 0.04
     },
     {
       "a": "vggt_raw",
       "b": "lift3d_dinov2_raw",
-      "overlap_ratio": 0.0
+      "overlap_ratio": 0.08
     },
     {
       "a": "vggt_raw",
       "b": "lift3d_dinov2_progressive_alpha05",
-      "overlap_ratio": 0.02
+      "overlap_ratio": 0.04
     },
     {
       "a": "vggt_progressive_alpha05",
@@ -668,7 +668,7 @@
     {
       "a": "vggt_progressive_alpha05",
       "b": "lift3d_clip_raw",
-      "overlap_ratio": 0.12
+      "overlap_ratio": 0.0
     },
     {
       "a": "vggt_progressive_alpha05",
@@ -678,7 +678,7 @@
     {
       "a": "vggt_progressive_alpha05",
       "b": "lift3d_dinov2_raw",
-      "overlap_ratio": 0.32
+      "overlap_ratio": 0.0
     },
     {
       "a": "vggt_progressive_alpha05",
@@ -723,7 +723,7 @@
     {
       "a": "vggt_fusion_progressive_alpha05",
       "b": "lift3d_clip_raw",
-      "overlap_ratio": 0.12
+      "overlap_ratio": 0.0
     },
     {
       "a": "vggt_fusion_progressive_alpha05",
@@ -733,7 +733,7 @@
     {
       "a": "vggt_fusion_progressive_alpha05",
       "b": "lift3d_dinov2_raw",
-      "overlap_ratio": 0.32
+      "overlap_ratio": 0.0
     },
     {
       "a": "vggt_fusion_progressive_alpha05",
@@ -743,7 +743,7 @@
     {
       "a": "vggt_prog_enc_lora",
       "b": "lift3d_clip_raw",
-      "overlap_ratio": 0.12
+      "overlap_ratio": 0.0
     },
     {
       "a": "vggt_prog_enc_lora",
@@ -753,7 +753,7 @@
     {
       "a": "vggt_prog_enc_lora",
       "b": "lift3d_dinov2_raw",
-      "overlap_ratio": 0.32
+      "overlap_ratio": 0.0
     },
     {
       "a": "vggt_prog_enc_lora",
@@ -763,22 +763,22 @@
     {
       "a": "lift3d_clip_raw",
       "b": "lift3d_clip_progressive_alpha05",
-      "overlap_ratio": 0.12
+      "overlap_ratio": 0.0
     },
     {
       "a": "lift3d_clip_raw",
       "b": "lift3d_dinov2_raw",
-      "overlap_ratio": 0.12
+      "overlap_ratio": 0.0
     },
     {
       "a": "lift3d_clip_raw",
       "b": "lift3d_dinov2_progressive_alpha05",
-      "overlap_ratio": 0.12
+      "overlap_ratio": 0.0
     },
     {
       "a": "lift3d_clip_progressive_alpha05",
       "b": "lift3d_dinov2_raw",
-      "overlap_ratio": 0.32
+      "overlap_ratio": 0.0
     },
     {
       "a": "lift3d_clip_progressive_alpha05",
@@ -788,9 +788,13 @@
     {
       "a": "lift3d_dinov2_raw",
       "b": "lift3d_dinov2_progressive_alpha05",
-      "overlap_ratio": 0.32
+      "overlap_ratio": 0.0
     }
   ],
+  "gt_grasp_resolution": {
+    "source": "none",
+    "dataset_attempt": "label_npz_not_found:tried=/mnt/ssd/ziyaochen/GraspClutter6D/scenes/000009/label/1.npz"
+  },
   "grasp_alignment_analysis": null,
   "feature_norm_pearson": {
     "model_names": [
@@ -808,122 +812,122 @@
     "matrix": [
       [
         1.0,
-        0.999773996598991,
-        0.12937484538704647,
+        0.9997680575405669,
+        -0.15481248263346398,
         0.9982015623287023,
-        0.13549163191796518,
+        0.09469930553851942,
         0.2565341646208771,
         0.9971721574926329,
         0.9971721574926329,
         0.9971721574926329,
-        0.07940334329087687
+        0.08517618214408677
       ],
       [
-        0.999773996598991,
+        0.9997680575405669,
         1.0,
-        0.12500638173417822,
-        0.9979479458913022,
-        0.137226763230102,
-        0.2560325404948042,
-        0.996994889864828,
-        0.996994889864828,
-        0.996994889864828,
-        0.0823855211426154
+        -0.15606069298476222,
+        0.9978146960944244,
+        0.09380418795961006,
+        0.25734479896063844,
+        0.9967609911398256,
+        0.9967609911398256,
+        0.9967609911398256,
+        0.08634142686465486
       ],
       [
-        0.12937484538704647,
-        0.12500638173417822,
+        -0.15481248263346398,
+        -0.15606069298476222,
         1.0,
-        0.1336450195768056,
-        0.06762177212427538,
-        0.03287830815599305,
-        0.11531230360810407,
-        0.11531230360810407,
-        0.11531230360810407,
-        -0.18864774155848738
+        -0.15513317101110655,
+        0.026345055225155303,
+        -0.3231642595440179,
+        -0.15051767578518563,
+        -0.15051767578518563,
+        -0.15051767578518563,
+        -0.3821022033330018
       ],
       [
         0.9982015623287023,
-        0.9979479458913022,
-        0.1336450195768056,
+        0.9978146960944244,
+        -0.15513317101110655,
         1.0,
-        0.12406088645136819,
+        0.10547499065800316,
         0.24938738819871523,
         0.9962272102172957,
         0.9962272102172957,
         0.9962272102172957,
-        0.07547072331397427
+        0.08474333488013815
       ],
       [
-        0.13549163191796518,
-        0.137226763230102,
-        0.06762177212427538,
-        0.12406088645136819,
+        0.09469930553851942,
+        0.09380418795961006,
+        0.026345055225155303,
+        0.10547499065800316,
         1.0,
-        0.14478582768739792,
-        0.1319197830998152,
-        0.1319197830998152,
-        0.1319197830998152,
-        -0.19286634607213946
+        -0.060848237875434114,
+        0.09523392365028617,
+        0.09523392365028617,
+        0.09523392365028617,
+        -0.09945067174113527
       ],
       [
         0.2565341646208771,
-        0.2560325404948042,
-        0.03287830815599305,
+        0.25734479896063844,
+        -0.3231642595440179,
         0.24938738819871523,
-        0.14478582768739792,
+        -0.060848237875434114,
         1.0,
         0.24284456136833527,
         0.24284456136833527,
         0.24284456136833527,
-        0.6976003378085189
+        0.6500226259092889
       ],
       [
         0.9971721574926329,
-        0.996994889864828,
-        0.11531230360810407,
+        0.9967609911398256,
+        -0.15051767578518563,
         0.9962272102172957,
-        0.1319197830998152,
+        0.09523392365028617,
         0.24284456136833527,
         1.0,
         1.0,
         1.0,
-        0.07989632022200768
+        0.08266636319867046
       ],
       [
         0.9971721574926329,
-        0.996994889864828,
-        0.11531230360810407,
+        0.9967609911398256,
+        -0.15051767578518563,
         0.9962272102172957,
-        0.1319197830998152,
+        0.09523392365028617,
         0.24284456136833527,
         1.0,
         1.0,
         1.0,
-        0.07989632022200768
+        0.08266636319867046
       ],
       [
         0.9971721574926329,
-        0.996994889864828,
-        0.11531230360810407,
+        0.9967609911398256,
+        -0.15051767578518563,
         0.9962272102172957,
-        0.1319197830998152,
+        0.09523392365028617,
         0.24284456136833527,
         1.0,
         1.0,
         1.0,
-        0.07989632022200768
+        0.08266636319867046
       ],
       [
-        0.07940334329087687,
-        0.0823855211426154,
-        -0.18864774155848738,
-        0.07547072331397427,
-        -0.19286634607213946,
-        0.6976003378085189,
-        0.07989632022200768,
-        0.07989632022200768,
-        0.07989632022200768,
+        0.08517618214408677,
+        0.08634142686465486,
+        -0.3821022033330018,
+        0.08474333488013815,
+        -0.09945067174113527,
+        0.6500226259092889,
+        0.08266636319867046,
+        0.08266636319867046,
+        0.08266636319867046,
         1.0
       ]
     ],
@@ -931,12 +935,12 @@
       {
         "model_a": "graspnet_backbone",
         "model_b": "lift3d_clip_progressive_alpha05",
-        "pearson_r": 0.999773996598991
+        "pearson_r": 0.9997680575405669
       },
       {
         "model_a": "graspnet_backbone",
         "model_b": "lift3d_clip_raw",
-        "pearson_r": 0.12937484538704647
+        "pearson_r": -0.15481248263346398
       },
       {
         "model_a": "graspnet_backbone",
@@ -946,7 +950,7 @@
       {
         "model_a": "graspnet_backbone",
         "model_b": "lift3d_dinov2_raw",
-        "pearson_r": 0.13549163191796518
+        "pearson_r": 0.09469930553851942
       },
       {
         "model_a": "graspnet_backbone",
@@ -971,87 +975,87 @@
       {
         "model_a": "graspnet_backbone",
         "model_b": "vggt_raw",
-        "pearson_r": 0.07940334329087687
+        "pearson_r": 0.08517618214408677
       },
       {
         "model_a": "lift3d_clip_progressive_alpha05",
         "model_b": "lift3d_clip_raw",
-        "pearson_r": 0.12500638173417822
+        "pearson_r": -0.15606069298476222
       },
       {
         "model_a": "lift3d_clip_progressive_alpha05",
         "model_b": "lift3d_dinov2_progressive_alpha05",
-        "pearson_r": 0.9979479458913022
+        "pearson_r": 0.9978146960944244
       },
       {
         "model_a": "lift3d_clip_progressive_alpha05",
         "model_b": "lift3d_dinov2_raw",
-        "pearson_r": 0.137226763230102
+        "pearson_r": 0.09380418795961006
       },
       {
         "model_a": "lift3d_clip_progressive_alpha05",
         "model_b": "vggt_distill",
-        "pearson_r": 0.2560325404948042
+        "pearson_r": 0.25734479896063844
       },
       {
         "model_a": "lift3d_clip_progressive_alpha05",
         "model_b": "vggt_fusion_progressive_alpha05",
-        "pearson_r": 0.996994889864828
+        "pearson_r": 0.9967609911398256
       },
       {
         "model_a": "lift3d_clip_progressive_alpha05",
         "model_b": "vggt_prog_enc_lora",
-        "pearson_r": 0.996994889864828
+        "pearson_r": 0.9967609911398256
       },
       {
         "model_a": "lift3d_clip_progressive_alpha05",
         "model_b": "vggt_progressive_alpha05",
-        "pearson_r": 0.996994889864828
+        "pearson_r": 0.9967609911398256
       },
       {
         "model_a": "lift3d_clip_progressive_alpha05",
         "model_b": "vggt_raw",
-        "pearson_r": 0.0823855211426154
+        "pearson_r": 0.08634142686465486
       },
       {
         "model_a": "lift3d_clip_raw",
         "model_b": "lift3d_dinov2_progressive_alpha05",
-        "pearson_r": 0.1336450195768056
+        "pearson_r": -0.15513317101110655
       },
       {
         "model_a": "lift3d_clip_raw",
         "model_b": "lift3d_dinov2_raw",
-        "pearson_r": 0.06762177212427538
+        "pearson_r": 0.026345055225155303
       },
       {
         "model_a": "lift3d_clip_raw",
         "model_b": "vggt_distill",
-        "pearson_r": 0.03287830815599305
+        "pearson_r": -0.3231642595440179
       },
       {
         "model_a": "lift3d_clip_raw",
         "model_b": "vggt_fusion_progressive_alpha05",
-        "pearson_r": 0.11531230360810407
+        "pearson_r": -0.15051767578518563
       },
       {
         "model_a": "lift3d_clip_raw",
         "model_b": "vggt_prog_enc_lora",
-        "pearson_r": 0.11531230360810407
+        "pearson_r": -0.15051767578518563
       },
       {
         "model_a": "lift3d_clip_raw",
         "model_b": "vggt_progressive_alpha05",
-        "pearson_r": 0.11531230360810407
+        "pearson_r": -0.15051767578518563
       },
       {
         "model_a": "lift3d_clip_raw",
         "model_b": "vggt_raw",
-        "pearson_r": -0.18864774155848738
+        "pearson_r": -0.3821022033330018
       },
       {
         "model_a": "lift3d_dinov2_progressive_alpha05",
         "model_b": "lift3d_dinov2_raw",
-        "pearson_r": 0.12406088645136819
+        "pearson_r": 0.10547499065800316
       },
       {
         "model_a": "lift3d_dinov2_progressive_alpha05",
@@ -1076,32 +1080,32 @@
       {
         "model_a": "lift3d_dinov2_progressive_alpha05",
         "model_b": "vggt_raw",
-        "pearson_r": 0.07547072331397427
+        "pearson_r": 0.08474333488013815
       },
       {
         "model_a": "lift3d_dinov2_raw",
         "model_b": "vggt_distill",
-        "pearson_r": 0.14478582768739792
+        "pearson_r": -0.060848237875434114
       },
       {
         "model_a": "lift3d_dinov2_raw",
         "model_b": "vggt_fusion_progressive_alpha05",
-        "pearson_r": 0.1319197830998152
+        "pearson_r": 0.09523392365028617
       },
       {
         "model_a": "lift3d_dinov2_raw",
         "model_b": "vggt_prog_enc_lora",
-        "pearson_r": 0.1319197830998152
+        "pearson_r": 0.09523392365028617
       },
       {
         "model_a": "lift3d_dinov2_raw",
         "model_b": "vggt_progressive_alpha05",
-        "pearson_r": 0.1319197830998152
+        "pearson_r": 0.09523392365028617
       },
       {
         "model_a": "lift3d_dinov2_raw",
         "model_b": "vggt_raw",
-        "pearson_r": -0.19286634607213946
+        "pearson_r": -0.09945067174113527
       },
       {
         "model_a": "vggt_distill",
@@ -1121,7 +1125,7 @@
       {
         "model_a": "vggt_distill",
         "model_b": "vggt_raw",
-        "pearson_r": 0.6976003378085189
+        "pearson_r": 0.6500226259092889
       },
       {
         "model_a": "vggt_fusion_progressive_alpha05",
@@ -1136,7 +1140,7 @@
       {
         "model_a": "vggt_fusion_progressive_alpha05",
         "model_b": "vggt_raw",
-        "pearson_r": 0.07989632022200768
+        "pearson_r": 0.08266636319867046
       },
       {
         "model_a": "vggt_prog_enc_lora",
@@ -1146,12 +1150,12 @@
       {
         "model_a": "vggt_prog_enc_lora",
         "model_b": "vggt_raw",
-        "pearson_r": 0.07989632022200768
+        "pearson_r": 0.08266636319867046
       },
       {
         "model_a": "vggt_progressive_alpha05",
         "model_b": "vggt_raw",
-        "pearson_r": 0.07989632022200768
+        "pearson_r": 0.08266636319867046
       }
     ]
   },
@@ -1162,8 +1166,8 @@
         "topk_energy_ratio": 0.040747179058942755
       },
       "vggt_raw": {
-        "entropy_of_normalized_norms": 7.624573636371197,
-        "topk_energy_ratio": 0.024662683865364316
+        "entropy_of_normalized_norms": 7.624564161938496,
+        "topk_energy_ratio": 0.02479894894318753
       },
       "vggt_progressive_alpha05": {
         "entropy_of_normalized_norms": 7.60505639001343,
@@ -1182,16 +1186,16 @@
         "topk_energy_ratio": 0.037408642803405334
       },
       "lift3d_clip_raw": {
-        "entropy_of_normalized_norms": 7.624187000363426,
-        "topk_energy_ratio": 0.026280766693467416
+        "entropy_of_normalized_norms": 7.624262576493681,
+        "topk_energy_ratio": 0.025678513124165896
       },
       "lift3d_clip_progressive_alpha05": {
-        "entropy_of_normalized_norms": 7.5939211621931895,
-        "topk_energy_ratio": 0.04050494444703368
+        "entropy_of_normalized_norms": 7.594025963184598,
+        "topk_energy_ratio": 0.04045838674884454
       },
       "lift3d_dinov2_raw": {
-        "entropy_of_normalized_norms": 7.622945127126561,
-        "topk_energy_ratio": 0.027558792200765264
+        "entropy_of_normalized_norms": 7.623174612330088,
+        "topk_energy_ratio": 0.027665169863389995
       },
       "lift3d_dinov2_progressive_alpha05": {
         "entropy_of_normalized_norms": 7.602895056747946,

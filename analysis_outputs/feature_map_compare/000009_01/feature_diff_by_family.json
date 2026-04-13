@@ -24,6 +24,7 @@
       "error": null,
       "diff_rel_epsilon": 1e-08,
       "diff_top_fraction": 0.1,
+      "topk_diff_grasp_overlap_note": "skipped: no GT grasps (dataset label or offline gt_grasp_group)",
       "per_model": {
         "vggt_raw": {
           "mean_l2_diff": 0.0,
@@ -34,46 +35,49 @@
           "max_rel_diff": 0.0
         },
         "vggt_progressive_alpha05": {
-          "mean_l2_diff": 4.549383191174979,
-          "std_l2_diff": 0.902516357946931,
-          "max_l2_diff": 7.453071859332501,
-          "mean_rel_diff": 7.0932245842886745,
-          "std_rel_diff": 1.4012932841249992,
-          "max_rel_diff": 11.586900010227346,
+          "mean_l2_diff": 4.542064792988214,
+          "std_l2_diff": 0.9011437878445326,
+          "max_l2_diff": 7.484192333540311,
+          "mean_rel_diff": 6.89701606544593,
+          "std_rel_diff": 1.3626865719127235,
+          "max_rel_diff": 11.327239652909196,
           "top_diff_fraction": 0.1,
           "top_diff_point_count": 205
         },
         "vggt_distill": {
-          "mean_l2_diff": 6.343415930999814,
-          "std_l2_diff": 0.6333796896500279,
-          "max_l2_diff": 7.468344925360836,
-          "mean_rel_diff": 9.885370521350122,
-          "std_rel_diff": 0.9251589921763484,
-          "max_rel_diff": 11.575576196064262,
+          "mean_l2_diff": 6.355513773417479,
+          "std_l2_diff": 0.6251778137931674,
+          "max_l2_diff": 7.470567133635782,
+          "mean_rel_diff": 9.645933625030715,
+          "std_rel_diff": 0.8875320143066112,
+          "max_rel_diff": 11.242938339277467,
           "top_diff_fraction": 0.1,
           "top_diff_point_count": 205
         },
         "vggt_fusion_progressive_alpha05": {
-          "mean_l2_diff": 4.549383191174979,
-          "std_l2_diff": 0.902516357946931,
-          "max_l2_diff": 7.453071859332501,
-          "mean_rel_diff": 7.0932245842886745,
-          "std_rel_diff": 1.4012932841249992,
-          "max_rel_diff": 11.586900010227346,
+          "mean_l2_diff": 4.542064792988214,
+          "std_l2_diff": 0.9011437878445326,
+          "max_l2_diff": 7.484192333540311,
+          "mean_rel_diff": 6.89701606544593,
+          "std_rel_diff": 1.3626865719127235,
+          "max_rel_diff": 11.327239652909196,
           "top_diff_fraction": 0.1,
           "top_diff_point_count": 205
         },
         "vggt_prog_enc_lora": {
-          "mean_l2_diff": 4.549383191174979,
-          "std_l2_diff": 0.902516357946931,
-          "max_l2_diff": 7.453071859332501,
-          "mean_rel_diff": 7.0932245842886745,
-          "std_rel_diff": 1.4012932841249992,
-          "max_rel_diff": 11.586900010227346,
+          "mean_l2_diff": 4.542064792988214,
+          "std_l2_diff": 0.9011437878445326,
+          "max_l2_diff": 7.484192333540311,
+          "mean_rel_diff": 6.89701606544593,
+          "std_rel_diff": 1.3626865719127235,
+          "max_rel_diff": 11.327239652909196,
           "top_diff_fraction": 0.1,
           "top_diff_point_count": 205
         }
-      }
+      },
+      "figure_caption_abs_l2": "abs L2 to ref=vggt_raw; family=vggt; rel ε=1e-08; top_mask=0.1",
+      "figure_caption_rel": "relative ||Δf||/(||f_ref||+ε); ref=vggt_raw; family=vggt; ε=1e-08",
+      "figure_caption_mask": "top-10pct by abs L2 vs ref=vggt_raw; family=vggt"
     },
     "lift3d_clip": {
       "diff_family": "lift3d_clip",
@@ -108,6 +112,7 @@
       "error": null,
       "diff_rel_epsilon": 1e-08,
       "diff_top_fraction": 0.1,
+      "topk_diff_grasp_overlap_note": "skipped: no GT grasps (dataset label or offline gt_grasp_group)",
       "per_model": {
         "lift3d_clip_raw": {
           "mean_l2_diff": 0.0,
@@ -118,16 +123,19 @@
           "max_rel_diff": 0.0
         },
         "lift3d_clip_progressive_alpha05": {
-          "mean_l2_diff": 6.7127892196376475,
-          "std_l2_diff": 1.3413615469967652,
-          "max_l2_diff": 11.414976176681629,
-          "mean_rel_diff": 2.0277293056259147,
-          "std_rel_diff": 0.4009845549628214,
-          "max_rel_diff": 3.4796742761551918,
+          "mean_l2_diff": 6.888043645337039,
+          "std_l2_diff": 1.3468128048402492,
+          "max_l2_diff": 11.243107265190929,
+          "mean_rel_diff": 2.002735560010133,
+          "std_rel_diff": 0.40392249165751287,
+          "max_rel_diff": 3.287926533188461,
           "top_diff_fraction": 0.1,
           "top_diff_point_count": 205
         }
-      }
+      },
+      "figure_caption_abs_l2": "abs L2 to ref=lift3d_clip_raw; family=lift3d_clip; rel ε=1e-08; top_mask=0.1",
+      "figure_caption_rel": "relative ||Δf||/(||f_ref||+ε); ref=lift3d_clip_raw; family=lift3d_clip; ε=1e-08",
+      "figure_caption_mask": "top-10pct by abs L2 vs ref=lift3d_clip_raw; family=lift3d_clip"
     },
     "lift3d_dino": {
       "diff_family": "lift3d_dino",
@@ -162,6 +170,7 @@
       "error": null,
       "diff_rel_epsilon": 1e-08,
       "diff_top_fraction": 0.1,
+      "topk_diff_grasp_overlap_note": "skipped: no GT grasps (dataset label or offline gt_grasp_group)",
       "per_model": {
         "lift3d_dinov2_raw": {
           "mean_l2_diff": 0.0,
@@ -172,16 +181,19 @@
           "max_rel_diff": 0.0
         },
         "lift3d_dinov2_progressive_alpha05": {
-          "mean_l2_diff": 7.462758567834504,
-          "std_l2_diff": 0.7448339385717838,
-          "max_l2_diff": 10.10361508757194,
-          "mean_rel_diff": 1.282389011277477,
-          "std_rel_diff": 0.11357366919557053,
-          "max_rel_diff": 1.7338596734114156,
+          "mean_l2_diff": 6.886991889013933,
+          "std_l2_diff": 0.6382352248653945,
+          "max_l2_diff": 9.048835917513749,
+          "mean_rel_diff": 1.2466046045294032,
+          "std_rel_diff": 0.09975363708137026,
+          "max_rel_diff": 1.6771893420068724,
           "top_diff_fraction": 0.1,
           "top_diff_point_count": 205
         }
-      }
+      },
+      "figure_caption_abs_l2": "abs L2 to ref=lift3d_dinov2_raw; family=lift3d_dino; rel ε=1e-08; top_mask=0.1",
+      "figure_caption_rel": "relative ||Δf||/(||f_ref||+ε); ref=lift3d_dinov2_raw; family=lift3d_dino; ε=1e-08",
+      "figure_caption_mask": "top-10pct by abs L2 vs ref=lift3d_dinov2_raw; family=lift3d_dino"
     },
     "graspnet": {
       "diff_family": "graspnet",

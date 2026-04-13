@@ -15,11 +15,13 @@ manifest 支持「字符串 ckpt 路径」或 ``{"type":"pretrained"|"checkpoint
 示例见 analysis/feature_map_compare/checkpoint_manifest.example.json
 
 特征差分：默认按表示族内与各自 RAW 比较，输出绝对 ``compare_diff_family_<族>_l2.png``、相对 ``*_rel.png``、
-top 比例二值高亮 ``*_mask_top*pct*_l2.png`` 与 ``feature_diff_by_family.json``；
+top 比例二值高亮 ``*_mask_top*pct*_l2.png`` 与 ``feature_diff_by_family.json``（含每模型
+``topk_diff_grasp_overlap``：含 ``overlap``、``overlap_random_baseline``（全点落入 grasp 邻域比例）、
+``improvement_vs_random = overlap / baseline``，见 ``--grasp_dist_threshold`` 与 ``--diff_top_fraction``）；
 ``--enable_cross_model_diff`` 可额外生成全局单参考 legacy 版图（含 graspnet，非跨族可比）。
 
-Grasp 对齐：若 npz 含 ``gt_grasp_group``，输出 ``compare_grasp_aligned_featnorm.png``（逐点特征范数 turbo + 距最近 GT 平移
-< ``--grasp_dist_threshold`` 的红色高亮）与 ``grasp_aligned_featnorm_meta.json``。
+Grasp 对齐：优先从 ``dataset_root/scenes/<scene>/label/<ann>.npz`` 读全量 ``grasps`` (N×17)，否则回退离线 npz 的
+``gt_grasp_group``；输出 ``compare_grasp_aligned_featnorm.png`` 与 ``grasp_aligned_featnorm_meta.json``。
 
 ``--global_norm_for_featvis``：L2 与 grasp 对齐图中特征范数色标在已加载模型间共用 min–max（子图标题带 ``[global ||·||]``）。
 """
@@ -54,8 +56,10 @@ from analysis.feature_map_compare.summary_stats import (
     pairwise_pearson_feature_norms,
     pca_first_component,
     per_point_min_dist_to_gt_translations,
+    resolve_gt_grasps_17d,
     save_summary_json,
     summarize_models,
+    topk_diff_grasp_region_overlap,
     topk_distance_to_nearest_gt_translation,
 )
 from analysis.feature_map_compare.visualize_maps import (
@@ -83,12 +87,35 @@ MODEL_PANEL_ORDER = [
     "lift3d_dinov2_progressive_alpha05",
 ]
 
+MODEL_DISPLAY_SHORT = {
+    "graspnet_backbone": "GraspNet",
+    "vggt_raw": "VGGT raw",
+    "vggt_progressive_alpha05": "VGGT prog.",
+    "vggt_distill": "VGGT distill",
+    "vggt_fusion_progressive_alpha05": "VGGT fusion",
+    "vggt_prog_enc_lora": "VGGT enc-LoRA",
+    "lift3d_clip_raw": "L3D-CLIP",
+    "lift3d_clip_progressive_alpha05": "L3D-CLIP prog.",
+    "lift3d_dinov2_raw": "L3D-DINO",
+    "lift3d_dinov2_progressive_alpha05": "L3D-DINO prog.",
+}
+
+DIFF_FAMILY_SUPTITLE = {
+    "vggt": "Feature Difference Analysis (VGGT Family)",
+    "lift3d_clip": "Feature Difference Analysis (Lift3D CLIP Family)",
+    "lift3d_dino": "Feature Difference Analysis (Lift3D DINO Family)",
+}
+
 SUBGROUPS = {
     "group_A": ["graspnet_backbone", "vggt_raw", "vggt_progressive_alpha05", "vggt_distill"],
     "group_B": ["lift3d_clip_raw", "lift3d_clip_progressive_alpha05"],
     "group_C": ["lift3d_dinov2_raw", "lift3d_dinov2_progressive_alpha05"],
     "group_D": ["vggt_raw", "vggt_fusion_progressive_alpha05", "graspnet_backbone"],
 }
+
+
+def _short_model_title(model_name: str) -> str:
+    return MODEL_DISPLAY_SHORT.get(model_name, model_name)
 
 
 def _ann_id_to_img_id(ann_id: int, camera: str) -> int:
@@ -477,12 +504,13 @@ def main():
     with open(os.path.join(out_dir, "extraction_log.json"), "w", encoding="utf-8") as f:
         json.dump(logs, f, indent=2, ensure_ascii=False)
 
+    gt_resolved, gt_resolve_meta = resolve_gt_grasps_17d(args.dataset_root, scene_id, ann_id, data)
+
     # 统计
     if feats_np:
         summ = summarize_models(feats_np, topk=args.topk_stats)
-        gt = None
-        if "gt_grasp_group" in data:
-            gt = np.asarray(data["gt_grasp_group"], dtype=np.float32)
+        summ["gt_grasp_resolution"] = gt_resolve_meta
+        gt = gt_resolved
 
         # 1) Grasp alignment：GT 平移 ↔ pc_common 最近点；各模型 top-k ↔ 最近 GT 平移
         grasp_align: Dict[str, Any] = {}
@@ -563,7 +591,12 @@ def main():
         panels_main.append(("image", depth_img, "Depth"))
     for m in MODEL_PANEL_ORDER:
         if m in feats_l2:
-            panels_main.append(panel_tuple(m + f" (L2){fn_scale_tag}", feats_l2[m]))
+            panels_main.append(
+                panel_tuple(
+                    f"{_short_model_title(m)} (L2){fn_scale_tag}",
+                    feats_l2[m],
+                )
+            )
     if len(panels_main) > 0:
         save_comparison_grid(
             panels_main,
@@ -572,17 +605,22 @@ def main():
             azim=azim,
             ncols=4,
             feat_norm_global_range=feat_norm_global_range,
+            suptitle="Per-Point Feature L2 Norms",
         )
 
-    # Grasp 对齐：逐点距最近 GT 抓取平移的距离；特征范数 turbo + 距离 < 阈值 红色覆盖
-    gt_viz = None
-    if "gt_grasp_group" in data:
-        _gg = np.asarray(data["gt_grasp_group"], dtype=np.float32)
-        if _gg.size > 0 and _gg.ndim == 2 and _gg.shape[1] >= 16:
-            gt_viz = _gg
-    grasp_dmin = per_point_min_dist_to_gt_translations(pc_common, gt_viz) if gt_viz is not None else None
+    # Grasp 对齐：逐点距最近 GT 抓取平移；特征范数 turbo + 距离 < 阈值 红色覆盖
+    grasp_dmin = (
+        per_point_min_dist_to_gt_translations(pc_common, gt_resolved)
+        if gt_resolved is not None
+        else None
+    )
     if grasp_dmin is not None and feats_l2:
         thr_ga = float(args.grasp_dist_threshold)
+        cap_ga = (
+            f"GT source: {gt_resolve_meta.get('source')}; "
+            f"red: min dist to GT translation [:,13:16] < {thr_ga} m; "
+            f"global_norm_for_featvis={feat_norm_global_range is not None}"
+        )
         ga_panels: List = []
         if rgb_img is not None:
             ga_panels.append(("image", rgb_img, "RGB"))
@@ -595,7 +633,7 @@ def main():
                         feats_l2[m],
                         grasp_dmin,
                         thr_ga,
-                        f"{m}  feat||·||{fn_scale_tag} + near-GT grasp <{thr_ga}m → red",
+                        _short_model_title(m),
                     )
                 )
         if any(p[0] == "pointcloud_grasp_align" for p in ga_panels):
@@ -604,14 +642,17 @@ def main():
                 os.path.join(out_dir, "compare_grasp_aligned_featnorm.png"),
                 elev=elev,
                 azim=azim,
-                ncols=4,
+                layout="rgb_wide_first_row",
                 feat_norm_global_range=feat_norm_global_range,
+                suptitle="Grasp-Aligned Feature Norms",
+                caption=cap_ga,
             )
         with open(os.path.join(out_dir, "grasp_aligned_featnorm_meta.json"), "w", encoding="utf-8") as f:
             json.dump(
                 {
                     "grasp_dist_threshold_m": thr_ga,
-                    "num_gt_grasps": int(gt_viz.shape[0]),
+                    "num_gt_grasps": int(gt_resolved.shape[0]),
+                    "gt_grasp_resolution": gt_resolve_meta,
                     "gt_translation_indices_in_grasp_row": "13:16",
                     "per_point_min_dist_to_nearest_gt_translation_m": {
                         "mean": float(np.mean(grasp_dmin)),
@@ -627,7 +668,8 @@ def main():
                         if feat_norm_global_range is not None
                         else {"mode": "per_panel_minmax"}
                     ),
-                    "visualization": "turbo = per-point L2 feature norm; red = dist to nearest GT translation < threshold",
+                    "figure_caption": cap_ga,
+                    "visualization": "turbo = per-point L2 feature norm; red = nearest GT translation distance < threshold",
                 },
                 f,
                 indent=2,
@@ -639,7 +681,7 @@ def main():
         pca_panels.append(("image", rgb_img, "RGB"))
     for m in MODEL_PANEL_ORDER:
         if m in feats_pca:
-            pca_panels.append(panel_tuple(m + " (PCA-1)", feats_pca[m]))
+            pca_panels.append(panel_tuple(f"{_short_model_title(m)} (PCA-1)", feats_pca[m]))
     if pca_panels:
         save_comparison_grid(
             pca_panels,
@@ -647,6 +689,7 @@ def main():
             elev=elev,
             azim=azim,
             ncols=4,
+            suptitle="Per-Point PCA-1 Feature Projection",
         )
 
     for gname, mlist in SUBGROUPS.items():
@@ -655,7 +698,7 @@ def main():
             sub.append(("image", rgb_img, "RGB"))
         for m in mlist:
             if m in feats_l2:
-                sub.append(panel_tuple(m + fn_scale_tag, feats_l2[m]))
+                sub.append(panel_tuple(_short_model_title(m) + fn_scale_tag, feats_l2[m]))
         if sub:
             save_comparison_grid(
                 sub,
@@ -664,6 +707,7 @@ def main():
                 azim=azim,
                 ncols=4,
                 feat_norm_global_range=feat_norm_global_range,
+                suptitle=f"Feature L2 Norms ({gname})",
             )
 
     # 表示一致：按族 RAW 参考的逐点 ||f_m - f_ref||_2（族间不混比）
@@ -694,6 +738,15 @@ def main():
             )
             entry["diff_rel_epsilon"] = float(args.diff_rel_epsilon)
             entry["diff_top_fraction"] = float(args.diff_top_fraction)
+            if grasp_dmin is not None:
+                entry["topk_diff_grasp_overlap_settings"] = {
+                    "grasp_dist_threshold_m": float(args.grasp_dist_threshold),
+                    "top_fraction_same_as_diff_mask": float(args.diff_top_fraction),
+                    "definition": "(top-k by abs L2 diff to ref) ∩ (min_dist_to_gt_translation < τ) divided by k",
+                    "improvement_vs_random": "overlap / mean_i 1[dist_to_gt(i)<τ]; baseline≈uniform random k points",
+                }
+            else:
+                entry["topk_diff_grasp_overlap_note"] = "skipped: no GT grasps (dataset label or offline gt_grasp_group)"
             entry["per_model"] = {}
             for m, vec in diff_maps.items():
                 v = np.asarray(vec, dtype=np.float64).ravel()
@@ -711,7 +764,29 @@ def main():
                     km = mask_maps[m]
                     pm["top_diff_fraction"] = float(args.diff_top_fraction)
                     pm["top_diff_point_count"] = int(np.sum(km > 0.5))
+                if grasp_dmin is not None and m != ref_name:
+                    tov = topk_diff_grasp_region_overlap(
+                        v,
+                        grasp_dmin,
+                        top_fraction=args.diff_top_fraction,
+                        grasp_dist_threshold=args.grasp_dist_threshold,
+                    )
+                    if tov is not None:
+                        pm["topk_diff_grasp_overlap"] = tov
                 entry["per_model"][m] = pm
+
+            diff_cap_abs = (
+                f"abs L2 to ref={ref_name}; family={df_key}; "
+                f"rel ε={args.diff_rel_epsilon}; top_mask={args.diff_top_fraction}"
+            )
+            entry["figure_caption_abs_l2"] = diff_cap_abs
+            entry["figure_caption_rel"] = (
+                f"relative ||Δf||/(||f_ref||+ε); ref={ref_name}; family={df_key}; ε={args.diff_rel_epsilon}"
+            )
+            pct_label = f"{int(round(args.diff_top_fraction * 100))}pct"
+            entry["figure_caption_mask"] = (
+                f"top-{pct_label} by abs L2 vs ref={ref_name}; family={df_key}"
+            )
 
             diff_panels: List = []
             if rgb_img is not None:
@@ -723,7 +798,7 @@ def main():
                             "pointcloud",
                             pc_common,
                             diff_maps[m],
-                            f"{m}  ||f-f_ref||  abs  family={df_key}  ref={ref_name}",
+                            _short_model_title(m),
                         )
                     )
             if len(diff_panels) > 1:
@@ -733,7 +808,10 @@ def main():
                     os.path.join(out_dir, f"compare_diff_family_{safe_df}_l2.png"),
                     elev=elev,
                     azim=azim,
+                    layout="rgb_wide_first_row",
                     ncols=4,
+                    suptitle=DIFF_FAMILY_SUPTITLE.get(df_key, f"Feature Difference ({df_key})"),
+                    caption=diff_cap_abs,
                 )
 
             rel_panels: List = []
@@ -746,7 +824,7 @@ def main():
                             "pointcloud",
                             pc_common,
                             rel_maps[m],
-                            f"{m}  rel=||Δf||/(||f_ref||+ε)  family={df_key}  ref={ref_name}",
+                            _short_model_title(m),
                         )
                     )
             if len(rel_panels) > 1:
@@ -756,10 +834,12 @@ def main():
                     os.path.join(out_dir, f"compare_diff_family_{safe_df}_rel.png"),
                     elev=elev,
                     azim=azim,
+                    layout="rgb_wide_first_row",
                     ncols=4,
+                    suptitle=DIFF_FAMILY_SUPTITLE.get(df_key, f"Feature Difference ({df_key})"),
+                    caption=entry["figure_caption_rel"],
                 )
 
-            pct_label = f"{int(round(args.diff_top_fraction * 100))}pct"
             mask_panels: List = []
             if rgb_img is not None:
                 mask_panels.append(("image", rgb_img, "RGB"))
@@ -770,7 +850,7 @@ def main():
                             "pointcloud_binary",
                             pc_common,
                             mask_maps[m],
-                            f"{m}  top-{pct_label} abs-diff mask  family={df_key}  ref={ref_name}",
+                            _short_model_title(m),
                         )
                     )
             if len(mask_panels) > 1:
@@ -780,7 +860,10 @@ def main():
                     os.path.join(out_dir, f"compare_diff_family_{safe_df}_mask_top{pct_label}_l2.png"),
                     elev=elev,
                     azim=azim,
+                    layout="rgb_wide_first_row",
                     ncols=4,
+                    suptitle=DIFF_FAMILY_SUPTITLE.get(df_key, f"Feature Difference ({df_key})"),
+                    caption=entry["figure_caption_mask"],
                 )
         elif fam_meta.get("error") and df_key != "graspnet":
             print(f"[WARN] 特征差分（{df_key}）跳过: {fam_meta.get('error')}")
@@ -807,6 +890,14 @@ def main():
             )
             legacy_block["diff_rel_epsilon"] = float(args.diff_rel_epsilon)
             legacy_block["diff_top_fraction"] = float(args.diff_top_fraction)
+            if grasp_dmin is not None:
+                legacy_block["topk_diff_grasp_overlap_settings"] = {
+                    "grasp_dist_threshold_m": float(args.grasp_dist_threshold),
+                    "top_fraction_same_as_diff_mask": float(args.diff_top_fraction),
+                    "improvement_vs_random": "overlap / mean_i 1[dist_to_gt(i)<τ]",
+                }
+            else:
+                legacy_block["topk_diff_grasp_overlap_note"] = "skipped: no GT grasps"
             legacy_block["per_model"] = {}
             for m, vec in legacy_maps.items():
                 v = np.asarray(vec, dtype=np.float64).ravel()
@@ -824,10 +915,24 @@ def main():
                     km = legacy_masks[m]
                     pm["top_diff_fraction"] = float(args.diff_top_fraction)
                     pm["top_diff_point_count"] = int(np.sum(km > 0.5))
+                if grasp_dmin is not None and m != leg_ref:
+                    tov = topk_diff_grasp_region_overlap(
+                        v,
+                        grasp_dmin,
+                        top_fraction=args.diff_top_fraction,
+                        grasp_dist_threshold=args.grasp_dist_threshold,
+                    )
+                    if tov is not None:
+                        pm["topk_diff_grasp_overlap"] = tov
                 legacy_block["per_model"][m] = pm
             leg_panels: List = []
             if rgb_img is not None:
                 leg_panels.append(("image", rgb_img, "RGB"))
+            leg_cap = (
+                f"LEGACY single ref={leg_ref}; not representation-aligned; "
+                f"ε_rel={args.diff_rel_epsilon}; top={args.diff_top_fraction}"
+            )
+            legacy_block["figure_caption"] = leg_cap
             for m in MODEL_PANEL_ORDER:
                 if m in legacy_maps:
                     leg_panels.append(
@@ -835,7 +940,7 @@ def main():
                             "pointcloud",
                             pc_common,
                             legacy_maps[m],
-                            f"{m}  ||f-f_ref|| abs LEGACY ref={leg_ref}",
+                            _short_model_title(m),
                         )
                     )
             if leg_panels:
@@ -845,7 +950,10 @@ def main():
                     os.path.join(out_dir, f"compare_diff_legacy_to_{safe_ref}_l2.png"),
                     elev=elev,
                     azim=azim,
+                    layout="rgb_wide_first_row" if rgb_img is not None else "uniform",
                     ncols=4,
+                    suptitle="Feature Difference Analysis (Legacy Cross-Model)",
+                    caption=leg_cap,
                 )
             leg_rel_panels: List = []
             if rgb_img is not None:
@@ -857,7 +965,7 @@ def main():
                             "pointcloud",
                             pc_common,
                             legacy_rel[m],
-                            f"{m}  rel=||Δf||/(||f_ref||+ε) LEGACY ref={leg_ref}",
+                            _short_model_title(m),
                         )
                     )
             if len(leg_rel_panels) > 1:
@@ -867,7 +975,10 @@ def main():
                     os.path.join(out_dir, f"compare_diff_legacy_to_{safe_ref}_rel.png"),
                     elev=elev,
                     azim=azim,
+                    layout="rgb_wide_first_row",
                     ncols=4,
+                    suptitle="Feature Difference Analysis (Legacy Cross-Model)",
+                    caption=leg_cap,
                 )
             pct_l = f"{int(round(args.diff_top_fraction * 100))}pct"
             leg_mask_panels: List = []
@@ -880,7 +991,7 @@ def main():
                             "pointcloud_binary",
                             pc_common,
                             legacy_masks[m],
-                            f"{m}  top-{pct_l} abs-diff mask LEGACY ref={leg_ref}",
+                            _short_model_title(m),
                         )
                     )
             if len(leg_mask_panels) > 1:
@@ -890,7 +1001,10 @@ def main():
                     os.path.join(out_dir, f"compare_diff_legacy_to_{safe_ref}_mask_top{pct_l}_l2.png"),
                     elev=elev,
                     azim=azim,
+                    layout="rgb_wide_first_row",
                     ncols=4,
+                    suptitle="Feature Difference Analysis (Legacy Cross-Model)",
+                    caption=leg_cap,
                 )
         elif legacy_meta.get("error"):
             print(f"[WARN] legacy 特征差分图跳过: {legacy_meta.get('error')}")

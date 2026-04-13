@@ -5,9 +5,80 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
+
+
+def load_gt_grasps_from_gc6d_label_npz(
+    dataset_root: str,
+    scene_id: int,
+    ann_id: int,
+) -> Tuple[Optional[np.ndarray], str]:
+    """
+    从原始 GC6D 目录读取 ``scenes/<sceneId>/label/<annId>.npz`` 中的完整 GT 抓取 (G, 17)。
+
+    优先键名 ``grasps``，其次 ``gt_grasp_group`` / ``gt_grasps`` / ``grasp_group``。
+    若文件不存在，尝试 ``annId`` 的零填充文件名。
+    返回 ``(array or None, 说明字符串)``；平移使用 ``[:, 13:16]`` 由调用方保证。
+    """
+    root = os.path.abspath(os.path.expanduser(dataset_root))
+    if not os.path.isdir(root):
+        return None, f"dataset_root_not_dir:{root}"
+
+    scene_dir = os.path.join(root, "scenes", f"{int(scene_id):06d}", "label")
+    if not os.path.isdir(scene_dir):
+        return None, f"label_dir_missing:{scene_dir}"
+
+    candidates = [
+        os.path.join(scene_dir, f"{int(ann_id)}.npz"),
+        os.path.join(scene_dir, f"{int(ann_id):06d}.npz"),
+        os.path.join(scene_dir, f"{int(ann_id):04d}.npz"),
+    ]
+    path = next((p for p in candidates if os.path.isfile(p)), None)
+    if path is None:
+        return None, f"label_npz_not_found:tried={candidates[0]}"
+
+    try:
+        z = np.load(path, allow_pickle=True)
+    except Exception as e:
+        return None, f"label_npz_load_error:{path}:{e!s}"
+
+    for key in ("grasps", "gt_grasp_group", "gt_grasps", "grasp_group"):
+        if key not in z.files:
+            continue
+        g = np.asarray(z[key])
+        if g.ndim == 2 and g.shape[1] >= 16 and g.shape[0] > 0:
+            return g.astype(np.float64), f"ok:{path} key={key} G={g.shape[0]}"
+
+    return None, f"no_grasp_array_in:{path} keys={list(z.files)}"
+
+
+def resolve_gt_grasps_17d(
+    dataset_root: Optional[str],
+    scene_id: int,
+    ann_id: int,
+    offline_npz_data: Any,
+) -> Tuple[Optional[np.ndarray], Dict[str, Any]]:
+    """
+    优先 ``dataset_root/.../label/<ann>.npz`` 全量 grasp；否则回退离线 npz 的 ``gt_grasp_group``。
+    ``offline_npz_data`` 为 ``numpy.load`` 返回的对象。
+    """
+    meta: Dict[str, Any] = {"source": None}
+    if dataset_root and str(dataset_root).strip():
+        arr, note = load_gt_grasps_from_gc6d_label_npz(dataset_root, scene_id, ann_id)
+        meta["dataset_attempt"] = note
+        if arr is not None:
+            meta["source"] = "dataset_label_npz"
+            return arr, meta
+    if "gt_grasp_group" in getattr(offline_npz_data, "files", []):
+        gg = np.asarray(offline_npz_data["gt_grasp_group"])
+        if gg.size > 0 and gg.ndim == 2 and gg.shape[1] >= 16:
+            meta["source"] = "offline_npz_gt_grasp_group"
+            return gg.astype(np.float64), meta
+    meta["source"] = "none"
+    return None, meta
 
 
 def l2_norm_per_point(feat: np.ndarray) -> np.ndarray:
@@ -116,6 +187,54 @@ def per_point_min_dist_to_gt_translations(
     pc = np.asarray(pc_common, dtype=np.float64)
     d = np.linalg.norm(pc[:, None, :] - T[None, :, :], axis=2)
     return np.min(d, axis=1).astype(np.float64)
+
+
+def topk_diff_grasp_region_overlap(
+    abs_diff_per_point: np.ndarray,
+    dist_to_gt_per_point: np.ndarray,
+    *,
+    top_fraction: float,
+    grasp_dist_threshold: float,
+) -> Optional[Dict[str, Any]]:
+    """
+    衡量「表示变化最大」的点是否落在抓取相关空间：与 ``top_fraction_binary_masks`` 相同地取
+    ``k = ceil(N * top_fraction)`` 个绝对差分最大的点；抓取区域为 ``dist_to_gt < grasp_dist_threshold``。
+
+    随机基线 ``overlap_random_baseline = mean(1[dist_to_gt < τ])``，与在全体点上均匀抽样的期望落入 grasp 邻域比例一致；
+    ``improvement_vs_random = overlap / baseline``（baseline 极小时为 None）。
+
+    返回上述量及 ``k``、交集大小等；长度不一致或无效参数时返回 None。
+    """
+    d_diff = np.asarray(abs_diff_per_point, dtype=np.float64).ravel()
+    d_gt = np.asarray(dist_to_gt_per_point, dtype=np.float64).ravel()
+    if d_diff.shape != d_gt.shape or d_diff.size == 0:
+        return None
+    frac = float(top_fraction)
+    if frac <= 0.0 or frac > 1.0:
+        return None
+    n = d_diff.size
+    k = max(1, int(np.ceil(n * frac)))
+    order = np.argsort(-d_diff, kind="stable")
+    top_mask = np.zeros(n, dtype=bool)
+    top_mask[order[:k]] = True
+    grasp_mask = d_gt < float(grasp_dist_threshold)
+    inter = int(np.logical_and(top_mask, grasp_mask).sum())
+    overlap = float(inter) / float(k)
+    baseline = float(np.mean(grasp_mask.astype(np.float64)))
+    eps = 1e-12
+    improvement = float(overlap / baseline) if baseline > eps else None
+    return {
+        "overlap": overlap,
+        "k": int(k),
+        "topk_in_grasp_region": int(inter),
+        "top_fraction": float(frac),
+        "grasp_dist_threshold_m": float(grasp_dist_threshold),
+        "overlap_random_baseline": baseline,
+        "improvement_vs_random": improvement,
+        "definition": "|topk_abs_diff ∩ {i : min_dist_to_gt_translation(i) < τ}| / k",
+        "baseline_definition": "mean over points of 1[dist_to_gt < τ]; uniform-random k-subset expectation ≈ baseline",
+        "improvement_definition": "overlap / overlap_random_baseline; >1 means task-aligned vs chance",
+    }
 
 
 def topk_distance_to_nearest_gt_translation(

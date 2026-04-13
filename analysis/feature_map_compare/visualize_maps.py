@@ -12,9 +12,11 @@ try:
     import matplotlib
 
     matplotlib.use("Agg")
+    import matplotlib.gridspec as gridspec
     import matplotlib.pyplot as plt
 except ImportError:
     plt = None
+    gridspec = None
 
 
 def _ensure_plt():
@@ -341,7 +343,7 @@ def scatter_pc_color(
     pl = _ensure_plt()
     fig = pl.figure(figsize=figsize)
     ax = fig.add_subplot(111, projection="3d")
-    p = ax.scatter(xyz[:, 0], xyz[:, 1], xyz[:, 2], c=color, cmap="turbo", s=2, alpha=0.9)
+    p = ax.scatter(xyz[:, 0], xyz[:, 1], xyz[:, 2], c=color, cmap="turbo", s=8, alpha=0.9)
     ax.view_init(elev=elev, azim=azim)
     ax.set_title(title, fontsize=9)
     pl.colorbar(p, ax=ax, shrink=0.5, fraction=0.08)
@@ -409,6 +411,83 @@ def save_rgb_depth_mask_previews(
     return out
 
 
+def _render_panel(
+    ax,
+    pan: Tuple,
+    *,
+    pl,
+    elev: float,
+    azim: float,
+    feat_norm_global_range: Optional[Tuple[float, float]],
+    point_size: float,
+    title_fontsize: float,
+) -> None:
+    """在已创建的 ``ax`` 上绘制单个 panel。"""
+    kind = pan[0]
+    if kind == "pointcloud":
+        _, xyz, sc, title = pan
+        if feat_norm_global_range is not None:
+            c = normalize_scores_with_range(
+                np.asarray(sc).ravel(),
+                feat_norm_global_range[0],
+                feat_norm_global_range[1],
+            )
+        else:
+            c = normalize_scores(np.asarray(sc).ravel())
+        p = ax.scatter(
+            xyz[:, 0], xyz[:, 1], xyz[:, 2], c=c, cmap="turbo", s=point_size, alpha=0.85
+        )
+        ax.view_init(elev=elev, azim=azim)
+        ax.set_title(title, fontsize=title_fontsize)
+        pl.colorbar(p, ax=ax, shrink=0.55, fraction=0.06)
+        ax.set_box_aspect((1, 1, 1))
+    elif kind == "pointcloud_binary":
+        _, xyz, mask, title = pan
+        m = np.asarray(mask, dtype=np.float64).ravel()
+        rgb = _binary_mask_colors(m)
+        ax.scatter(
+            xyz[:, 0],
+            xyz[:, 1],
+            xyz[:, 2],
+            c=rgb,
+            s=point_size,
+            alpha=0.9,
+        )
+        ax.view_init(elev=elev, azim=azim)
+        ax.set_title(title, fontsize=title_fontsize)
+        ax.set_box_aspect((1, 1, 1))
+    elif kind == "pointcloud_grasp_align":
+        _, xyz, feat_norm, dist_to_gt, grasp_r, title = pan
+        rgb = rgb_feat_norm_with_grasp_highlight(
+            feat_norm,
+            dist_to_gt,
+            grasp_radius=float(grasp_r),
+            feat_norm_global_range=feat_norm_global_range,
+        )
+        ax.scatter(
+            xyz[:, 0],
+            xyz[:, 1],
+            xyz[:, 2],
+            c=np.clip(rgb, 0, 1),
+            s=point_size,
+            alpha=0.88,
+        )
+        ax.view_init(elev=elev, azim=azim)
+        ax.set_title(title, fontsize=title_fontsize)
+        ax.set_box_aspect((1, 1, 1))
+    elif kind == "image":
+        _, img, title = pan
+        im = np.asarray(img)
+        if im.ndim == 2:
+            ax.imshow(im, cmap="gray")
+        else:
+            ax.imshow(np.clip(im, 0, 1) if im.dtype != np.uint8 else im)
+        ax.set_title(title, fontsize=title_fontsize)
+        ax.axis("off")
+    else:
+        raise ValueError(pan)
+
+
 def save_comparison_grid(
     panels: Sequence[Tuple],
     out_path: str,
@@ -416,8 +495,14 @@ def save_comparison_grid(
     elev: float = 20.0,
     azim: float = -60.0,
     ncols: int = 4,
-    figsize_per: Tuple[float, float] = (3.2, 3.0),
+    figsize_per: Tuple[float, float] = (4.0, 4.0),
     feat_norm_global_range: Optional[Tuple[float, float]] = None,
+    layout: str = "uniform",
+    suptitle: Optional[str] = None,
+    caption: Optional[str] = None,
+    point_size: float = 8.0,
+    title_fontsize: float = 10.0,
+    suptitle_fontsize: float = 16.0,
 ):
     """
     panels 每项为以下之一：
@@ -428,79 +513,71 @@ def save_comparison_grid(
 
     ``feat_norm_global_range``：对 pointcloud / pointcloud_grasp_align 中特征范数着色使用共用 (min,max)，
     若为 None 则 pointcloud 仍按子图内 min-max（与旧行为一致）。
+
+    ``layout``：``uniform`` 为规则网格；``rgb_wide_first_row`` 为单行且首列（RGB）更宽（首 panel 须为 image）。
+    ``figsize``：uniform 时为 ``(figsize_per[0]*ncols, figsize_per[1]*nrows)``；rgb_wide_first_row 时为 ``(figsize_per[0]*n, figsize_per[1])``，``n=len(panels)``。
     """
     pl = _ensure_plt()
+    if gridspec is None:
+        raise RuntimeError("需要 matplotlib.gridspec")
     n = len(panels)
-    nrows = (n + ncols - 1) // ncols
-    fig_w = figsize_per[0] * min(ncols, n)
-    fig_h = figsize_per[1] * nrows
-    fig = pl.figure(figsize=(fig_w, fig_h))
-    for i, pan in enumerate(panels):
-        kind = pan[0]
-        if kind == "pointcloud":
-            _, xyz, sc, title = pan
-            ax = fig.add_subplot(nrows, ncols, i + 1, projection="3d")
-            if feat_norm_global_range is not None:
-                c = normalize_scores_with_range(
-                    np.asarray(sc).ravel(),
-                    feat_norm_global_range[0],
-                    feat_norm_global_range[1],
-                )
+    if n == 0:
+        return
+
+    if layout == "rgb_wide_first_row":
+        if panels[0][0] != "image":
+            layout = "uniform"
+    nrows = (n + ncols - 1) // ncols if layout == "uniform" else 1
+
+    if layout == "rgb_wide_first_row":
+        fig_w = float(figsize_per[0]) * float(n)
+        fig_h = float(figsize_per[1])
+        fig = pl.figure(figsize=(fig_w, fig_h))
+        wr = [2.0] + [1.0] * (n - 1)
+        gs = gridspec.GridSpec(1, n, figure=fig, width_ratios=wr, wspace=0.12)
+        for i, pan in enumerate(panels):
+            kind = pan[0]
+            if kind == "image":
+                ax = fig.add_subplot(gs[0, i])
             else:
-                c = normalize_scores(np.asarray(sc).ravel())
-            p = ax.scatter(xyz[:, 0], xyz[:, 1], xyz[:, 2], c=c, cmap="turbo", s=1.5, alpha=0.85)
-            ax.view_init(elev=elev, azim=azim)
-            ax.set_title(title, fontsize=8)
-            pl.colorbar(p, ax=ax, shrink=0.55, fraction=0.06)
-            ax.set_box_aspect((1, 1, 1))
-        elif kind == "pointcloud_binary":
-            _, xyz, mask, title = pan
-            ax = fig.add_subplot(nrows, ncols, i + 1, projection="3d")
-            m = np.asarray(mask, dtype=np.float64).ravel()
-            rgb = _binary_mask_colors(m)
-            ax.scatter(
-                xyz[:, 0],
-                xyz[:, 1],
-                xyz[:, 2],
-                c=rgb,
-                s=1.8,
-                alpha=0.9,
-            )
-            ax.view_init(elev=elev, azim=azim)
-            ax.set_title(title, fontsize=8)
-            ax.set_box_aspect((1, 1, 1))
-        elif kind == "pointcloud_grasp_align":
-            _, xyz, feat_norm, dist_to_gt, grasp_r, title = pan
-            rgb = rgb_feat_norm_with_grasp_highlight(
-                feat_norm,
-                dist_to_gt,
-                grasp_radius=float(grasp_r),
+                ax = fig.add_subplot(gs[0, i], projection="3d")
+            _render_panel(
+                ax,
+                pan,
+                pl=pl,
+                elev=elev,
+                azim=azim,
                 feat_norm_global_range=feat_norm_global_range,
+                point_size=point_size,
+                title_fontsize=title_fontsize,
             )
-            ax = fig.add_subplot(nrows, ncols, i + 1, projection="3d")
-            ax.scatter(
-                xyz[:, 0],
-                xyz[:, 1],
-                xyz[:, 2],
-                c=np.clip(rgb, 0, 1),
-                s=1.5,
-                alpha=0.88,
-            )
-            ax.view_init(elev=elev, azim=azim)
-            ax.set_title(title, fontsize=8)
-            ax.set_box_aspect((1, 1, 1))
-        elif kind == "image":
-            _, img, title = pan
-            ax = fig.add_subplot(nrows, ncols, i + 1)
-            im = np.asarray(img)
-            if im.ndim == 2:
-                ax.imshow(im, cmap="gray")
+    else:
+        fig_w = float(figsize_per[0]) * float(ncols)
+        fig_h = float(figsize_per[1]) * float(nrows)
+        fig = pl.figure(figsize=(fig_w, fig_h))
+        for i, pan in enumerate(panels):
+            kind = pan[0]
+            if kind == "image":
+                ax = fig.add_subplot(nrows, ncols, i + 1)
             else:
-                ax.imshow(np.clip(im, 0, 1) if im.dtype != np.uint8 else im)
-            ax.set_title(title, fontsize=8)
-            ax.axis("off")
-        else:
-            raise ValueError(pan)
-    pl.tight_layout()
+                ax = fig.add_subplot(nrows, ncols, i + 1, projection="3d")
+            _render_panel(
+                ax,
+                pan,
+                pl=pl,
+                elev=elev,
+                azim=azim,
+                feat_norm_global_range=feat_norm_global_range,
+                point_size=point_size,
+                title_fontsize=title_fontsize,
+            )
+
+    if suptitle:
+        fig.suptitle(suptitle, fontsize=suptitle_fontsize, y=0.98)
+    if caption:
+        fig.text(0.5, 0.01, caption, ha="center", va="bottom", fontsize=8)
+    top = 0.93 if suptitle else 0.98
+    bottom = 0.06 if caption else 0.02
+    fig.tight_layout(rect=[0, bottom, 1, top])
     fig.savefig(out_path, dpi=160)
     pl.close(fig)
