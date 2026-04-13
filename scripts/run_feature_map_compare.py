@@ -187,8 +187,9 @@ def main():
         type=str,
         default="seed256",
         choices=("dense768", "seed256"),
-        help="VGGT：seed256=默认，与训练一致：pt_mlp→NN→replacement_projector→(progressive/distill 等)→vpmodule 前 256 维；"
-        "dense768=仅全图 pt_mlp768（不含 projector，旧对比用）",
+        help="VGGT：seed256=默认，与训练一致：backbone(LoRA)→中间768→NN→replacement_projector→"
+        "(vggt_raw 含 align/scale；progressive/distill/fusion 等)→vpmodule 前 256 维任务适配特征；"
+        "dense768=仅全图 pt_mlp768（无 projector/混合，纯几何对照）",
     )
     ap.add_argument(
         "--diff_ref_model",

@@ -21,7 +21,59 @@
           "skipped_reason": "cross_family"
         }
       },
-      "error": "参考模型 'vggt_raw' 不在 feats_np 中"
+      "error": null,
+      "diff_rel_epsilon": 1e-08,
+      "diff_top_fraction": 0.1,
+      "per_model": {
+        "vggt_raw": {
+          "mean_l2_diff": 0.0,
+          "std_l2_diff": 0.0,
+          "max_l2_diff": 0.0,
+          "mean_rel_diff": 0.0,
+          "std_rel_diff": 0.0,
+          "max_rel_diff": 0.0
+        },
+        "vggt_progressive_alpha05": {
+          "mean_l2_diff": 4.549383191174979,
+          "std_l2_diff": 0.902516357946931,
+          "max_l2_diff": 7.453071859332501,
+          "mean_rel_diff": 7.0932245842886745,
+          "std_rel_diff": 1.4012932841249992,
+          "max_rel_diff": 11.586900010227346,
+          "top_diff_fraction": 0.1,
+          "top_diff_point_count": 205
+        },
+        "vggt_distill": {
+          "mean_l2_diff": 6.343415930999814,
+          "std_l2_diff": 0.6333796896500279,
+          "max_l2_diff": 7.468344925360836,
+          "mean_rel_diff": 9.885370521350122,
+          "std_rel_diff": 0.9251589921763484,
+          "max_rel_diff": 11.575576196064262,
+          "top_diff_fraction": 0.1,
+          "top_diff_point_count": 205
+        },
+        "vggt_fusion_progressive_alpha05": {
+          "mean_l2_diff": 4.549383191174979,
+          "std_l2_diff": 0.902516357946931,
+          "max_l2_diff": 7.453071859332501,
+          "mean_rel_diff": 7.0932245842886745,
+          "std_rel_diff": 1.4012932841249992,
+          "max_rel_diff": 11.586900010227346,
+          "top_diff_fraction": 0.1,
+          "top_diff_point_count": 205
+        },
+        "vggt_prog_enc_lora": {
+          "mean_l2_diff": 4.549383191174979,
+          "std_l2_diff": 0.902516357946931,
+          "max_l2_diff": 7.453071859332501,
+          "mean_rel_diff": 7.0932245842886745,
+          "std_rel_diff": 1.4012932841249992,
+          "max_rel_diff": 11.586900010227346,
+          "top_diff_fraction": 0.1,
+          "top_diff_point_count": 205
+        }
+      }
     },
     "lift3d_clip": {
       "diff_family": "lift3d_clip",
@@ -29,6 +81,9 @@
       "skipped": {},
       "excluded_from_this_family": {
         "graspnet_backbone": {
+          "skipped_reason": "cross_family"
+        },
+        "vggt_raw": {
           "skipped_reason": "cross_family"
         },
         "vggt_progressive_alpha05": {
@@ -63,12 +118,12 @@
           "max_rel_diff": 0.0
         },
         "lift3d_clip_progressive_alpha05": {
-          "mean_l2_diff": 7.171399242323449,
-          "std_l2_diff": 1.3627795882265192,
-          "max_l2_diff": 11.7627650537803,
-          "mean_rel_diff": 1.9767878641589864,
-          "std_rel_diff": 0.3687319191318017,
-          "max_rel_diff": 3.245065970647752,
+          "mean_l2_diff": 6.7127892196376475,
+          "std_l2_diff": 1.3413615469967652,
+          "max_l2_diff": 11.414976176681629,
+          "mean_rel_diff": 2.0277293056259147,
+          "std_rel_diff": 0.4009845549628214,
+          "max_rel_diff": 3.4796742761551918,
           "top_diff_fraction": 0.1,
           "top_diff_point_count": 205
         }
@@ -82,6 +137,9 @@
         "graspnet_backbone": {
           "skipped_reason": "cross_family"
         },
+        "vggt_raw": {
+          "skipped_reason": "cross_family"
+        },
         "vggt_progressive_alpha05": {
           "skipped_reason": "cross_family"
         },
@@ -114,12 +172,12 @@
           "max_rel_diff": 0.0
         },
         "lift3d_dinov2_progressive_alpha05": {
-          "mean_l2_diff": 7.303778637195614,
-          "std_l2_diff": 0.7541225042290499,
-          "max_l2_diff": 9.76573845786017,
-          "mean_rel_diff": 1.2308178403568268,
-          "std_rel_diff": 0.08671410124559475,
-          "max_rel_diff": 1.5777505227080477,
+          "mean_l2_diff": 7.462758567834504,
+          "std_l2_diff": 0.7448339385717838,
+          "max_l2_diff": 10.10361508757194,
+          "mean_rel_diff": 1.282389011277477,
+          "std_rel_diff": 0.11357366919557053,
+          "max_rel_diff": 1.7338596734114156,
           "top_diff_fraction": 0.1,
           "top_diff_point_count": 205
         }
@@ -130,6 +188,9 @@
       "reference_model": null,
       "skipped": {},
       "excluded_from_this_family": {
+        "vggt_raw": {
+          "skipped_reason": "cross_family"
+        },
         "vggt_progressive_alpha05": {
           "skipped_reason": "cross_family"
         },
@@ -165,6 +226,7 @@
   "global_report": {
     "model_to_diff_family": {
       "graspnet_backbone": "graspnet",
+      "vggt_raw": "vggt",
       "vggt_progressive_alpha05": "vggt",
       "vggt_distill": "vggt",
       "vggt_fusion_progressive_alpha05": "vggt",

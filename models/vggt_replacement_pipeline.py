@@ -19,6 +19,45 @@ from utils.point_norm import normalize_xyz_with_pc
 from .vggt_encoder import VGGTEncoder
 
 
+def apply_vggt_replacement_align_and_scale(model: nn.Module, seed_features: torch.Tensor) -> torch.Tensor:
+    """
+    ``replacement_projector`` 输出之后、``vpmodule`` 之前：与 ``VGGTReplacementGraspNet.forward`` 一致。
+    非 ``VGGTReplacementGraspNet``（无 ``replacement_align_mode``）时原样返回，便于特征提取与 forward 共用。
+    """
+    if not hasattr(model, "replacement_align_mode"):
+        return seed_features
+    mode = str(model.replacement_align_mode)
+    if mode == "layernorm":
+        x = seed_features.permute(0, 2, 1).contiguous()
+        seed_features = model.replacement_align_ln(x).permute(0, 2, 1).contiguous()
+    elif mode == "layernorm_affine":
+        x = seed_features.permute(0, 2, 1).contiguous()
+        x = model.replacement_align_ln(x)
+        x = x * model.replacement_affine_gamma.view(1, 1, 256) + model.replacement_affine_beta.view(1, 1, 256)
+        seed_features = x.permute(0, 2, 1).contiguous()
+    elif mode == "adapter":
+        seed_features = model.replacement_adapter(seed_features)
+    elif mode in ("ln_adapter", "layernorm_adapter"):
+        x = seed_features.permute(0, 2, 1).contiguous()
+        x = model.replacement_align_ln(x).permute(0, 2, 1).contiguous()
+        seed_features = model.replacement_adapter(x)
+    elif mode in ("layernorm_affine_adapter", "layernorm_affine_deep_adapter"):
+        x = seed_features.permute(0, 2, 1).contiguous()
+        x = model.replacement_align_ln(x)
+        x = x * model.replacement_affine_gamma.view(1, 1, 256) + model.replacement_affine_beta.view(1, 1, 256)
+        x = x.permute(0, 2, 1).contiguous()
+        seed_features = model.replacement_adapter(x)
+
+    if hasattr(model, "replacement_scale_mode"):
+        if model.replacement_scale_mode == "fixed":
+            seed_features = model.replacement_fixed_alpha * seed_features
+        elif model.replacement_scale_mode == "ln_learnable":
+            x = seed_features.permute(0, 2, 1).contiguous()
+            x = model.replacement_scale_ln(x)
+            seed_features = x.permute(0, 2, 1).contiguous() * model.replacement_learnable_scale
+    return seed_features
+
+
 def _make_replacement_adapter(hidden: int, depth: int) -> nn.Sequential:
     layers = [nn.Conv1d(256, hidden, kernel_size=1), nn.ReLU(inplace=True)]
     for _ in range(max(depth - 2, 0)):
@@ -34,6 +73,10 @@ def _vggt_local_features_b768k(
     """
     images: (B,3,224,224)
     return: pts (B,k,3), feat (B,768,k) 与 VGGT 高置信度采样点一致。
+
+    **中间量**：``encoder.backbone``（含注入的 LoRA）预测 ``world_points``，再经 ``pt_mlp``(xyz)→768
+    供最近邻 gather 到 GraspNet seed。**可视化/对比请用** ``extract_vggt_variant_pre_vpmodule`` 的 **256 维**
+    ``replacement_projector`` + 混合/对齐 之后、与 ``forward`` 中 ``vpmodule`` 输入一致的特征，而非单独使用本函数的 768。
     """
     if images.dim() == 4:
         images_v = images.unsqueeze(1)
@@ -138,32 +181,7 @@ class VGGTReplacementGraspNet(nn.Module):
         pts_n = normalize_xyz_with_pc(point_cloud, pts)
         vggt_raw = nearest_neighbor_gather_features(seed_n, pts_n, feat_b768k).float()
         seed_features = self.replacement_projector(vggt_raw)
-        if self.replacement_align_mode == "layernorm":
-            x = seed_features.permute(0, 2, 1).contiguous()
-            seed_features = self.replacement_align_ln(x).permute(0, 2, 1).contiguous()
-        elif self.replacement_align_mode == "layernorm_affine":
-            x = seed_features.permute(0, 2, 1).contiguous()
-            x = self.replacement_align_ln(x)
-            x = x * self.replacement_affine_gamma.view(1, 1, 256) + self.replacement_affine_beta.view(1, 1, 256)
-            seed_features = x.permute(0, 2, 1).contiguous()
-        elif self.replacement_align_mode == "adapter":
-            seed_features = self.replacement_adapter(seed_features)
-        elif self.replacement_align_mode in ("ln_adapter", "layernorm_adapter"):
-            x = seed_features.permute(0, 2, 1).contiguous()
-            x = self.replacement_align_ln(x).permute(0, 2, 1).contiguous()
-            seed_features = self.replacement_adapter(x)
-        elif self.replacement_align_mode in ("layernorm_affine_adapter", "layernorm_affine_deep_adapter"):
-            x = seed_features.permute(0, 2, 1).contiguous()
-            x = self.replacement_align_ln(x)
-            x = x * self.replacement_affine_gamma.view(1, 1, 256) + self.replacement_affine_beta.view(1, 1, 256)
-            x = x.permute(0, 2, 1).contiguous()
-            seed_features = self.replacement_adapter(x)
-        if self.replacement_scale_mode == "fixed":
-            seed_features = self.replacement_fixed_alpha * seed_features
-        elif self.replacement_scale_mode == "ln_learnable":
-            x = seed_features.permute(0, 2, 1).contiguous()
-            x = self.replacement_scale_ln(x)
-            seed_features = x.permute(0, 2, 1).contiguous() * self.replacement_learnable_scale
+        seed_features = apply_vggt_replacement_align_and_scale(self, seed_features)
 
         end_points = view_estimator.vpmodule(seed_xyz, seed_features, end_points)
         end_points = self.grasp_net.grasp_generator(end_points)

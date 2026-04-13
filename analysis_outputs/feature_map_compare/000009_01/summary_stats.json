@@ -4,6 +4,10 @@
       "l2_norm_mean": 7.748074531555176,
       "l2_norm_std": 2.0165512561798096
     },
+    "vggt_raw": {
+      "l2_norm_mean": 0.6413275599479675,
+      "l2_norm_std": 0.006104676518589258
+    },
     "vggt_progressive_alpha05": {
       "l2_norm_mean": 4.486776828765869,
       "l2_norm_std": 0.9064760208129883
@@ -21,16 +25,16 @@
       "l2_norm_std": 0.9064760208129883
     },
     "lift3d_clip_raw": {
-      "l2_norm_mean": 3.628080129623413,
-      "l2_norm_std": 0.13906830549240112
+      "l2_norm_mean": 3.3100404739379883,
+      "l2_norm_std": 0.0973871499300003
     },
     "lift3d_clip_progressive_alpha05": {
-      "l2_norm_mean": 5.871208190917969,
-      "l2_norm_std": 1.4884039163589478
+      "l2_norm_mean": 5.867038249969482,
+      "l2_norm_std": 1.4877731800079346
     },
     "lift3d_dinov2_raw": {
-      "l2_norm_mean": 5.927883148193359,
-      "l2_norm_std": 0.3371618986129761
+      "l2_norm_mean": 5.823729515075684,
+      "l2_norm_std": 0.33711522817611694
     },
     "lift3d_dinov2_progressive_alpha05": {
       "l2_norm_mean": 4.336020469665527,
@@ -90,6 +94,58 @@
       1703,
       1479,
       1795
+    ],
+    "vggt_raw": [
+      1447,
+      1125,
+      1914,
+      969,
+      974,
+      973,
+      971,
+      1057,
+      965,
+      906,
+      907,
+      876,
+      880,
+      881,
+      882,
+      883,
+      886,
+      890,
+      891,
+      892,
+      898,
+      900,
+      902,
+      903,
+      980,
+      984,
+      991,
+      1060,
+      1055,
+      1053,
+      1048,
+      1044,
+      1043,
+      1042,
+      1041,
+      1039,
+      1033,
+      985,
+      1028,
+      1025,
+      1024,
+      1022,
+      1017,
+      1016,
+      1015,
+      1012,
+      1002,
+      998,
+      1027,
+      949
     ],
     "vggt_progressive_alpha05": [
       629,
@@ -300,56 +356,56 @@
       1795
     ],
     "lift3d_clip_raw": [
-      779,
-      1276,
-      1976,
-      1351,
-      1373,
-      1874,
-      726,
-      583,
-      1485,
-      649,
-      1068,
-      1809,
-      1851,
-      1657,
-      284,
-      1113,
-      1171,
-      414,
-      1483,
-      189,
-      22,
-      425,
-      2041,
-      1542,
-      774,
-      1195,
-      524,
-      1589,
-      1987,
-      85,
-      595,
-      1932,
-      1377,
-      1826,
-      561,
-      556,
-      785,
-      979,
-      1702,
-      508,
-      43,
-      42,
-      1706,
-      163,
-      164,
-      1428,
-      1358,
-      1843,
-      1176,
-      335
+      1092,
+      1391,
+      612,
+      1007,
+      369,
+      1928,
+      1463,
+      1899,
+      474,
+      1877,
+      490,
+      93,
+      1105,
+      501,
+      397,
+      1415,
+      321,
+      402,
+      1944,
+      1855,
+      320,
+      1122,
+      1807,
+      1933,
+      310,
+      761,
+      664,
+      1000,
+      990,
+      1707,
+      961,
+      1010,
+      1716,
+      1719,
+      923,
+      1977,
+      2022,
+      905,
+      1,
+      1312,
+      1687,
+      879,
+      875,
+      1746,
+      1582,
+      806,
+      767,
+      157,
+      127,
+      1177
     ],
     "lift3d_clip_progressive_alpha05": [
       629,
@@ -359,15 +415,15 @@
       685,
       2031,
       1562,
-      1663,
-      1886,
-      574,
       1109,
       1531,
       2040,
+      1245,
       259,
       299,
-      1245,
+      1886,
+      1663,
+      574,
       799,
       56,
       474,
@@ -378,8 +434,8 @@
       1415,
       175,
       1755,
-      1692,
       1630,
+      1692,
       1565,
       1146,
       969,
@@ -388,72 +444,72 @@
       401,
       372,
       358,
-      235,
-      1633,
       989,
-      819,
-      836,
+      68,
+      956,
+      235,
       846,
       336,
-      956,
-      68,
       1084,
-      1243,
+      836,
+      819,
+      1633,
       1703,
+      1243,
       1479,
       1795
     ],
     "lift3d_dinov2_raw": [
-      834,
       435,
-      961,
-      806,
-      1415,
-      1719,
-      1000,
-      474,
-      376,
+      834,
       1588,
       1603,
-      2017,
+      376,
       1078,
       8,
-      63,
+      2017,
       1332,
+      63,
+      1769,
+      1417,
+      367,
+      820,
+      587,
+      1272,
+      724,
+      1939,
+      989,
       1084,
+      956,
+      836,
+      1633,
+      235,
+      68,
       819,
       336,
-      989,
-      235,
-      1633,
-      836,
       846,
-      956,
-      68,
-      267,
-      244,
-      297,
-      212,
-      646,
-      948,
-      1994,
-      1634,
-      604,
-      1801,
-      1940,
-      371,
-      1006,
-      1531,
-      2040,
-      299,
-      1245,
-      1109,
-      259,
-      1159,
-      2024,
-      1311,
+      961,
+      474,
+      806,
+      1415,
+      1000,
+      1719,
+      843,
+      1606,
+      889,
+      584,
+      1371,
+      409,
+      1240,
+      194,
+      695,
+      1459,
+      954,
+      603,
       1636,
-      409
+      95,
+      1311,
+      406
     ],
     "lift3d_dinov2_progressive_alpha05": [
       44,
@@ -511,6 +567,11 @@
   "pairwise_topk_overlap": [
     {
       "a": "graspnet_backbone",
+      "b": "vggt_raw",
+      "overlap_ratio": 0.02
+    },
+    {
+      "a": "graspnet_backbone",
       "b": "vggt_progressive_alpha05",
       "overlap_ratio": 1.0
     },
@@ -532,7 +593,7 @@
     {
       "a": "graspnet_backbone",
       "b": "lift3d_clip_raw",
-      "overlap_ratio": 0.0
+      "overlap_ratio": 0.12
     },
     {
       "a": "graspnet_backbone",
@@ -542,12 +603,52 @@
     {
       "a": "graspnet_backbone",
       "b": "lift3d_dinov2_raw",
-      "overlap_ratio": 0.44
+      "overlap_ratio": 0.32
     },
     {
       "a": "graspnet_backbone",
       "b": "lift3d_dinov2_progressive_alpha05",
       "overlap_ratio": 1.0
+    },
+    {
+      "a": "vggt_raw",
+      "b": "vggt_progressive_alpha05",
+      "overlap_ratio": 0.02
+    },
+    {
+      "a": "vggt_raw",
+      "b": "vggt_distill",
+      "overlap_ratio": 0.0
+    },
+    {
+      "a": "vggt_raw",
+      "b": "vggt_fusion_progressive_alpha05",
+      "overlap_ratio": 0.02
+    },
+    {
+      "a": "vggt_raw",
+      "b": "vggt_prog_enc_lora",
+      "overlap_ratio": 0.02
+    },
+    {
+      "a": "vggt_raw",
+      "b": "lift3d_clip_raw",
+      "overlap_ratio": 0.0
+    },
+    {
+      "a": "vggt_raw",
+      "b": "lift3d_clip_progressive_alpha05",
+      "overlap_ratio": 0.02
+    },
+    {
+      "a": "vggt_raw",
+      "b": "lift3d_dinov2_raw",
+      "overlap_ratio": 0.0
+    },
+    {
+      "a": "vggt_raw",
+      "b": "lift3d_dinov2_progressive_alpha05",
+      "overlap_ratio": 0.02
     },
     {
       "a": "vggt_progressive_alpha05",
@@ -567,7 +668,7 @@
     {
       "a": "vggt_progressive_alpha05",
       "b": "lift3d_clip_raw",
-      "overlap_ratio": 0.0
+      "overlap_ratio": 0.12
     },
     {
       "a": "vggt_progressive_alpha05",
@@ -577,7 +678,7 @@
     {
       "a": "vggt_progressive_alpha05",
       "b": "lift3d_dinov2_raw",
-      "overlap_ratio": 0.44
+      "overlap_ratio": 0.32
     },
     {
       "a": "vggt_progressive_alpha05",
@@ -597,7 +698,7 @@
     {
       "a": "vggt_distill",
       "b": "lift3d_clip_raw",
-      "overlap_ratio": 0.1
+      "overlap_ratio": 0.0
     },
     {
       "a": "vggt_distill",
@@ -622,7 +723,7 @@
     {
       "a": "vggt_fusion_progressive_alpha05",
       "b": "lift3d_clip_raw",
-      "overlap_ratio": 0.0
+      "overlap_ratio": 0.12
     },
     {
       "a": "vggt_fusion_progressive_alpha05",
@@ -632,7 +733,7 @@
     {
       "a": "vggt_fusion_progressive_alpha05",
       "b": "lift3d_dinov2_raw",
-      "overlap_ratio": 0.44
+      "overlap_ratio": 0.32
     },
     {
       "a": "vggt_fusion_progressive_alpha05",
@@ -642,7 +743,7 @@
     {
       "a": "vggt_prog_enc_lora",
       "b": "lift3d_clip_raw",
-      "overlap_ratio": 0.0
+      "overlap_ratio": 0.12
     },
     {
       "a": "vggt_prog_enc_lora",
@@ -652,7 +753,7 @@
     {
       "a": "vggt_prog_enc_lora",
       "b": "lift3d_dinov2_raw",
-      "overlap_ratio": 0.44
+      "overlap_ratio": 0.32
     },
     {
       "a": "vggt_prog_enc_lora",
@@ -662,22 +763,22 @@
     {
       "a": "lift3d_clip_raw",
       "b": "lift3d_clip_progressive_alpha05",
-      "overlap_ratio": 0.0
+      "overlap_ratio": 0.12
     },
     {
       "a": "lift3d_clip_raw",
       "b": "lift3d_dinov2_raw",
-      "overlap_ratio": 0.0
+      "overlap_ratio": 0.12
     },
     {
       "a": "lift3d_clip_raw",
       "b": "lift3d_dinov2_progressive_alpha05",
-      "overlap_ratio": 0.0
+      "overlap_ratio": 0.12
     },
     {
       "a": "lift3d_clip_progressive_alpha05",
       "b": "lift3d_dinov2_raw",
-      "overlap_ratio": 0.44
+      "overlap_ratio": 0.32
     },
     {
       "a": "lift3d_clip_progressive_alpha05",
@@ -687,7 +788,7 @@
     {
       "a": "lift3d_dinov2_raw",
       "b": "lift3d_dinov2_progressive_alpha05",
-      "overlap_ratio": 0.44
+      "overlap_ratio": 0.32
     }
   ],
   "grasp_alignment_analysis": null,
@@ -701,106 +802,128 @@
       "vggt_distill",
       "vggt_fusion_progressive_alpha05",
       "vggt_prog_enc_lora",
-      "vggt_progressive_alpha05"
+      "vggt_progressive_alpha05",
+      "vggt_raw"
     ],
     "matrix": [
       [
         1.0,
-        0.9998022100386581,
-        0.17319683721562043,
+        0.999773996598991,
+        0.12937484538704647,
         0.9982015623287023,
-        0.5710805282490081,
+        0.13549163191796518,
         0.2565341646208771,
         0.9971721574926329,
         0.9971721574926329,
-        0.9971721574926329
+        0.9971721574926329,
+        0.07940334329087687
       ],
       [
-        0.9998022100386581,
+        0.999773996598991,
         1.0,
-        0.1674350766751497,
-        0.9978865230345528,
-        0.5706533963060216,
-        0.25675240412977324,
-        0.9968829607851124,
-        0.9968829607851124,
-        0.9968829607851124
+        0.12500638173417822,
+        0.9979479458913022,
+        0.137226763230102,
+        0.2560325404948042,
+        0.996994889864828,
+        0.996994889864828,
+        0.996994889864828,
+        0.0823855211426154
       ],
       [
-        0.17319683721562043,
-        0.1674350766751497,
+        0.12937484538704647,
+        0.12500638173417822,
         1.0,
-        0.18137670521626825,
-        0.25788293349308794,
-        0.024423837831036712,
-        0.16331291939816253,
-        0.16331291939816253,
-        0.16331291939816253
+        0.1336450195768056,
+        0.06762177212427538,
+        0.03287830815599305,
+        0.11531230360810407,
+        0.11531230360810407,
+        0.11531230360810407,
+        -0.18864774155848738
       ],
       [
         0.9982015623287023,
-        0.9978865230345528,
-        0.18137670521626825,
+        0.9979479458913022,
+        0.1336450195768056,
         1.0,
-        0.5721043092544149,
+        0.12406088645136819,
         0.24938738819871523,
         0.9962272102172957,
         0.9962272102172957,
-        0.9962272102172957
+        0.9962272102172957,
+        0.07547072331397427
       ],
       [
-        0.5710805282490081,
-        0.5706533963060216,
-        0.25788293349308794,
-        0.5721043092544149,
+        0.13549163191796518,
+        0.137226763230102,
+        0.06762177212427538,
+        0.12406088645136819,
         1.0,
-        0.310271748705635,
-        0.5549363124816789,
-        0.5549363124816789,
-        0.5549363124816789
+        0.14478582768739792,
+        0.1319197830998152,
+        0.1319197830998152,
+        0.1319197830998152,
+        -0.19286634607213946
       ],
       [
         0.2565341646208771,
-        0.25675240412977324,
-        0.024423837831036712,
+        0.2560325404948042,
+        0.03287830815599305,
         0.24938738819871523,
-        0.310271748705635,
+        0.14478582768739792,
         1.0,
         0.24284456136833527,
         0.24284456136833527,
-        0.24284456136833527
+        0.24284456136833527,
+        0.6976003378085189
       ],
       [
         0.9971721574926329,
-        0.9968829607851124,
-        0.16331291939816253,
+        0.996994889864828,
+        0.11531230360810407,
         0.9962272102172957,
-        0.5549363124816789,
+        0.1319197830998152,
         0.24284456136833527,
         1.0,
         1.0,
-        1.0
+        1.0,
+        0.07989632022200768
       ],
       [
         0.9971721574926329,
-        0.9968829607851124,
-        0.16331291939816253,
+        0.996994889864828,
+        0.11531230360810407,
         0.9962272102172957,
-        0.5549363124816789,
+        0.1319197830998152,
         0.24284456136833527,
         1.0,
         1.0,
-        1.0
+        1.0,
+        0.07989632022200768
       ],
       [
         0.9971721574926329,
-        0.9968829607851124,
-        0.16331291939816253,
+        0.996994889864828,
+        0.11531230360810407,
         0.9962272102172957,
-        0.5549363124816789,
+        0.1319197830998152,
         0.24284456136833527,
         1.0,
         1.0,
+        1.0,
+        0.07989632022200768
+      ],
+      [
+        0.07940334329087687,
+        0.0823855211426154,
+        -0.18864774155848738,
+        0.07547072331397427,
+        -0.19286634607213946,
+        0.6976003378085189,
+        0.07989632022200768,
+        0.07989632022200768,
+        0.07989632022200768,
         1.0
       ]
     ],
@@ -808,12 +931,12 @@
       {
         "model_a": "graspnet_backbone",
         "model_b": "lift3d_clip_progressive_alpha05",
-        "pearson_r": 0.9998022100386581
+        "pearson_r": 0.999773996598991
       },
       {
         "model_a": "graspnet_backbone",
         "model_b": "lift3d_clip_raw",
-        "pearson_r": 0.17319683721562043
+        "pearson_r": 0.12937484538704647
       },
       {
         "model_a": "graspnet_backbone",
@@ -823,7 +946,7 @@
       {
         "model_a": "graspnet_backbone",
         "model_b": "lift3d_dinov2_raw",
-        "pearson_r": 0.5710805282490081
+        "pearson_r": 0.13549163191796518
       },
       {
         "model_a": "graspnet_backbone",
@@ -846,74 +969,89 @@
         "pearson_r": 0.9971721574926329
       },
       {
+        "model_a": "graspnet_backbone",
+        "model_b": "vggt_raw",
+        "pearson_r": 0.07940334329087687
+      },
+      {
         "model_a": "lift3d_clip_progressive_alpha05",
         "model_b": "lift3d_clip_raw",
-        "pearson_r": 0.1674350766751497
+        "pearson_r": 0.12500638173417822
       },
       {
         "model_a": "lift3d_clip_progressive_alpha05",
         "model_b": "lift3d_dinov2_progressive_alpha05",
-        "pearson_r": 0.9978865230345528
+        "pearson_r": 0.9979479458913022
       },
       {
         "model_a": "lift3d_clip_progressive_alpha05",
         "model_b": "lift3d_dinov2_raw",
-        "pearson_r": 0.5706533963060216
+        "pearson_r": 0.137226763230102
       },
       {
         "model_a": "lift3d_clip_progressive_alpha05",
         "model_b": "vggt_distill",
-        "pearson_r": 0.25675240412977324
+        "pearson_r": 0.2560325404948042
       },
       {
         "model_a": "lift3d_clip_progressive_alpha05",
         "model_b": "vggt_fusion_progressive_alpha05",
-        "pearson_r": 0.9968829607851124
+        "pearson_r": 0.996994889864828
       },
       {
         "model_a": "lift3d_clip_progressive_alpha05",
         "model_b": "vggt_prog_enc_lora",
-        "pearson_r": 0.9968829607851124
+        "pearson_r": 0.996994889864828
       },
       {
         "model_a": "lift3d_clip_progressive_alpha05",
         "model_b": "vggt_progressive_alpha05",
-        "pearson_r": 0.9968829607851124
+        "pearson_r": 0.996994889864828
+      },
+      {
+        "model_a": "lift3d_clip_progressive_alpha05",
+        "model_b": "vggt_raw",
+        "pearson_r": 0.0823855211426154
       },
       {
         "model_a": "lift3d_clip_raw",
         "model_b": "lift3d_dinov2_progressive_alpha05",
-        "pearson_r": 0.18137670521626825
+        "pearson_r": 0.1336450195768056
       },
       {
         "model_a": "lift3d_clip_raw",
         "model_b": "lift3d_dinov2_raw",
-        "pearson_r": 0.25788293349308794
+        "pearson_r": 0.06762177212427538
       },
       {
         "model_a": "lift3d_clip_raw",
         "model_b": "vggt_distill",
-        "pearson_r": 0.024423837831036712
+        "pearson_r": 0.03287830815599305
       },
       {
         "model_a": "lift3d_clip_raw",
         "model_b": "vggt_fusion_progressive_alpha05",
-        "pearson_r": 0.16331291939816253
+        "pearson_r": 0.11531230360810407
       },
       {
         "model_a": "lift3d_clip_raw",
         "model_b": "vggt_prog_enc_lora",
-        "pearson_r": 0.16331291939816253
+        "pearson_r": 0.11531230360810407
       },
       {
         "model_a": "lift3d_clip_raw",
         "model_b": "vggt_progressive_alpha05",
-        "pearson_r": 0.16331291939816253
+        "pearson_r": 0.11531230360810407
+      },
+      {
+        "model_a": "lift3d_clip_raw",
+        "model_b": "vggt_raw",
+        "pearson_r": -0.18864774155848738
       },
       {
         "model_a": "lift3d_dinov2_progressive_alpha05",
         "model_b": "lift3d_dinov2_raw",
-        "pearson_r": 0.5721043092544149
+        "pearson_r": 0.12406088645136819
       },
       {
         "model_a": "lift3d_dinov2_progressive_alpha05",
@@ -936,24 +1074,34 @@
         "pearson_r": 0.9962272102172957
       },
       {
+        "model_a": "lift3d_dinov2_progressive_alpha05",
+        "model_b": "vggt_raw",
+        "pearson_r": 0.07547072331397427
+      },
+      {
         "model_a": "lift3d_dinov2_raw",
         "model_b": "vggt_distill",
-        "pearson_r": 0.310271748705635
+        "pearson_r": 0.14478582768739792
       },
       {
         "model_a": "lift3d_dinov2_raw",
         "model_b": "vggt_fusion_progressive_alpha05",
-        "pearson_r": 0.5549363124816789
+        "pearson_r": 0.1319197830998152
       },
       {
         "model_a": "lift3d_dinov2_raw",
         "model_b": "vggt_prog_enc_lora",
-        "pearson_r": 0.5549363124816789
+        "pearson_r": 0.1319197830998152
       },
       {
         "model_a": "lift3d_dinov2_raw",
         "model_b": "vggt_progressive_alpha05",
-        "pearson_r": 0.5549363124816789
+        "pearson_r": 0.1319197830998152
+      },
+      {
+        "model_a": "lift3d_dinov2_raw",
+        "model_b": "vggt_raw",
+        "pearson_r": -0.19286634607213946
       },
       {
         "model_a": "vggt_distill",
@@ -969,6 +1117,11 @@
         "model_a": "vggt_distill",
         "model_b": "vggt_progressive_alpha05",
         "pearson_r": 0.24284456136833527
+      },
+      {
+        "model_a": "vggt_distill",
+        "model_b": "vggt_raw",
+        "pearson_r": 0.6976003378085189
       },
       {
         "model_a": "vggt_fusion_progressive_alpha05",
@@ -979,11 +1132,26 @@
         "model_a": "vggt_fusion_progressive_alpha05",
         "model_b": "vggt_progressive_alpha05",
         "pearson_r": 1.0
+      },
+      {
+        "model_a": "vggt_fusion_progressive_alpha05",
+        "model_b": "vggt_raw",
+        "pearson_r": 0.07989632022200768
       },
       {
         "model_a": "vggt_prog_enc_lora",
         "model_b": "vggt_progressive_alpha05",
         "pearson_r": 1.0
+      },
+      {
+        "model_a": "vggt_prog_enc_lora",
+        "model_b": "vggt_raw",
+        "pearson_r": 0.07989632022200768
+      },
+      {
+        "model_a": "vggt_progressive_alpha05",
+        "model_b": "vggt_raw",
+        "pearson_r": 0.07989632022200768
       }
     ]
   },
@@ -992,6 +1160,10 @@
       "graspnet_backbone": {
         "entropy_of_normalized_norms": 7.592236715258981,
         "topk_energy_ratio": 0.040747179058942755
+      },
+      "vggt_raw": {
+        "entropy_of_normalized_norms": 7.624573636371197,
+        "topk_energy_ratio": 0.024662683865364316
       },
       "vggt_progressive_alpha05": {
         "entropy_of_normalized_norms": 7.60505639001343,
@@ -1010,16 +1182,16 @@
         "topk_energy_ratio": 0.037408642803405334
       },
       "lift3d_clip_raw": {
-        "entropy_of_normalized_norms": 7.6238864505695485,
-        "topk_energy_ratio": 0.026288213625847982
+        "entropy_of_normalized_norms": 7.624187000363426,
+        "topk_energy_ratio": 0.026280766693467416
       },
       "lift3d_clip_progressive_alpha05": {
-        "entropy_of_normalized_norms": 7.59392260601715,
-        "topk_energy_ratio": 0.04044885779819082
+        "entropy_of_normalized_norms": 7.5939211621931895,
+        "topk_energy_ratio": 0.04050494444703368
       },
       "lift3d_dinov2_raw": {
-        "entropy_of_normalized_norms": 7.623023690553046,
-        "topk_energy_ratio": 0.028262315030477377
+        "entropy_of_normalized_norms": 7.622945127126561,
+        "topk_energy_ratio": 0.027558792200765264
       },
       "lift3d_dinov2_progressive_alpha05": {
         "entropy_of_normalized_norms": 7.602895056747946,

@@ -2,12 +2,14 @@
 """
 各模型在 pc_common 上的可比特征：统一记录 layer 名称、对齐方式与张量形状。
 
-默认与训练/推理一致的可视化目标为 **适配后、进入 vpmodule 之前** 的 seed 特征（通常 256 维）：
+默认与训练/推理一致的可视化目标为 **任务适配后、进入 vpmodule 之前** 的 seed 特征（通常 256 维），
+**不是** 纯几何的 ``world_points + pt_mlp`` 768：
 
-- **VGGT（``vggt_mode=seed256``）**：``pt_mlp`` 采样点 768 → NN 对齐到 seed → ``replacement_projector`` →
-  （progressive / distill / fusion 等）→ 与 ``forward`` 中 ``vpmodule`` 输入一致。
+- **VGGT（``vggt_mode=seed256``）**：``encoder.backbone``（含 LoRA）→ 中间 768 仅用于 NN gather 到 seed →
+  ``replacement_projector`` →（``vggt_raw`` 含 replacement 对齐/缩放；progressive 含 α 混合与 adapter；
+  distill / fusion 等同 ``forward``）→ 与 ``vpmodule`` 输入一致。
 - **Lift3D-CLIP / DINOv2**：``replacement_projector`` 后及 progressive 分支后的 seed 特征。
-- **dense768** 模式仅作可选对照（全图 ``pt_mlp`` 768，不含 projector），不用作默认可训练特征对比。
+- **dense768** 模式仅作可选对照（全图 ``pt_mlp`` 768，**无** projector/混合），旧式几何对照。
 """
 
 from __future__ import annotations
@@ -26,7 +28,10 @@ from models.lift3d_clip_patch_features import lift3d_clip_forward_patch_tokens
 from models.lift3d_clip_replacement_pipeline import (
     _normalize_pc_lift3d,
 )
-from models.vggt_replacement_pipeline import _vggt_local_features_b768k
+from models.vggt_replacement_pipeline import (
+    _vggt_local_features_b768k,
+    apply_vggt_replacement_align_and_scale,
+)
 from utils.point_norm import normalize_xyz_with_pc
 
 # 与训练/推理一致：VGGT 预训练权重标识（见 ``VGGTEncoder._load_vggt_backbone``）
@@ -273,7 +278,9 @@ def extract_vggt_variant_pre_vpmodule(
 ) -> Dict[str, Any]:
     """
     variant: vggt_raw | vggt_progressive | vggt_distill | vggt_fusion_progressive | vggt_prog_enc_lora
-    均复现 forward 中进入 vpmodule 之前的 seed_features（256）。
+    均复现 ``forward`` 中进入 ``vpmodule`` 之前的 **任务适配** ``seed_features``（256），
+    含 ``replacement_projector``、progressive α / distill / fusion、以及 ``vggt_raw`` 的 replacement 对齐与缩放。
+    中间 ``_vggt_local_features_b768k`` 仅为 VGGT→seed 对齐用，最终着色特征与此 768 几何路径不同。
     """
     view_estimator = model.grasp_net.view_estimator
     backbone = view_estimator.backbone
@@ -287,8 +294,9 @@ def extract_vggt_variant_pre_vpmodule(
     vggt_raw = nearest_neighbor_gather_features(seed_n, pts_n, feat_b768k).float()
 
     if variant == "vggt_raw":
-        x = model.replacement_projector(vggt_raw)
-        tensor_note = "replacement_projector(VGGT gathered 768 -> 256)"
+        proj = model.replacement_projector(vggt_raw)
+        seed_features = apply_vggt_replacement_align_and_scale(model, proj)
+        tensor_note = "replacement_projector + align/scale (same as VGGTReplacementGraspNet.forward pre-vpmodule)"
     elif variant == "vggt_progressive" or variant == "vggt_prog_enc_lora":
         x = model.replacement_projector(vggt_raw)
         x_ln = model.progressive_ln(x.permute(0, 2, 1).contiguous()).permute(0, 2, 1).contiguous()

@@ -22,8 +22,19 @@
     "load_type": "pretrained",
     "source": "facebook/VGGT-1B",
     "checkpoint": null,
-    "status": "extract_error",
-    "error": "local variable 'seed_features' referenced before assignment"
+    "status": "ok",
+    "meta": {
+      "checkpoint_tensor": "replacement_projector + align/scale (same as VGGTReplacementGraspNet.forward pre-vpmodule)",
+      "original_shape": [
+        1,
+        256,
+        1024
+      ],
+      "alignment": "nearest_neighbor_in_normalize_xyz_with_pc_space (seed_xyz refs)",
+      "feature_dim": 256,
+      "variant": "vggt_raw",
+      "feature_stage": "pre_vpmodule_seed256_post_projector_and_mixing"
+    }
   },
   {
     "model": "vggt_progressive_alpha05",
