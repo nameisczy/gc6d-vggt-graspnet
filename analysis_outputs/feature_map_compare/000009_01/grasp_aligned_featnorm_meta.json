@@ -1,0 +1,22 @@
+{
+  "grasp_dist_threshold_m": 0.02,
+  "num_gt_grasps": 107,
+  "gt_grasp_resolution": {
+    "source": "gc6d_api_loadGrasp",
+    "camera": "realsense-d415",
+    "split": "val",
+    "gc6d_api_split": "train",
+    "dataset_attempt": "ok:GraspClutter6D.loadGrasp"
+  },
+  "gt_translation_indices_in_grasp_row": "13:16",
+  "per_point_min_dist_to_nearest_gt_translation_m": {
+    "mean": 0.1282135126446259,
+    "std": 0.07369236434559245,
+    "frac_points_below_threshold": 0.03955078125
+  },
+  "feat_norm_color_scale": {
+    "mode": "per_panel_minmax"
+  },
+  "figure_caption": "GT source: gc6d_api_loadGrasp; red: min dist to GT translation [:,13:16] < 0.02 m; global_norm_for_featvis=False",
+  "visualization": "turbo = per-point L2 feature norm; red = nearest GT translation distance < threshold"
+}

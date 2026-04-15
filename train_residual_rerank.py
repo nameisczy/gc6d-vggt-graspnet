@@ -110,6 +110,31 @@ def parse_args():
     p.add_argument("--ranking_pos_dist_thresh", type=float, default=0.05)
     p.add_argument("--ranking_neg_samples_per_pos", type=int, default=3)
     p.add_argument("--ranking_max_pairs", type=int, default=2048)
+    p.add_argument(
+        "--ranking_quality_thresh",
+        type=float,
+        default=0.02,
+        help="ranking 正样本：最近 GT 的 quality 需大于该阈值（17D 中由 --ranking_gt_quality_index 指定维）",
+    )
+    p.add_argument(
+        "--ranking_gt_top_k",
+        type=int,
+        default=100,
+        help="先按 quality 过滤再按降序保留的 GT 条数上限",
+    )
+    p.add_argument(
+        "--ranking_gt_quality_index",
+        type=int,
+        default=3,
+        help="GT 17D 中用作 quality 的维度索引（默认 3=depth）",
+    )
+    p.add_argument(
+        "--ranking_neg_sample_strategy",
+        type=str,
+        default="high_baseline",
+        choices=("high_baseline", "random"),
+        help="负样本：high_baseline=优先高 baseline 分数（难例），random=均匀随机",
+    )
     p.add_argument("--loss_mode", type=str, default="bidir")
     p.add_argument("--loss_alpha", type=float, default=0.7)
     p.add_argument("--best_gt_weight", type=float, default=0.3)
@@ -233,6 +258,10 @@ def main():
                 ranking_pos_dist_thresh=args.ranking_pos_dist_thresh,
                 ranking_neg_samples_per_pos=args.ranking_neg_samples_per_pos,
                 ranking_max_pairs=args.ranking_max_pairs,
+                ranking_quality_thresh=args.ranking_quality_thresh,
+                ranking_gt_top_k=args.ranking_gt_top_k,
+                ranking_gt_quality_index=args.ranking_gt_quality_index,
+                ranking_neg_sample_strategy=args.ranking_neg_sample_strategy,
                 reranker_bounded=not args.reranker_unbounded,
                 reranker_normalize_center=not args.no_normalize_reranker_center,
                 reranker_extended_features=None,
@@ -274,6 +303,10 @@ def main():
                 ranking_pos_dist_thresh=args.ranking_pos_dist_thresh,
                 ranking_neg_samples_per_pos=args.ranking_neg_samples_per_pos,
                 ranking_max_pairs=args.ranking_max_pairs,
+                ranking_quality_thresh=args.ranking_quality_thresh,
+                ranking_gt_top_k=args.ranking_gt_top_k,
+                ranking_gt_quality_index=args.ranking_gt_quality_index,
+                ranking_neg_sample_strategy=args.ranking_neg_sample_strategy,
                 reranker_bounded=not args.reranker_unbounded,
                 reranker_normalize_center=not args.no_normalize_reranker_center,
                 reranker_extended_features=None,

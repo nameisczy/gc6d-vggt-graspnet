@@ -20,8 +20,8 @@ top 比例二值高亮 ``*_mask_top*pct*_l2.png`` 与 ``feature_diff_by_family.j
 ``improvement_vs_random = overlap / baseline``，见 ``--grasp_dist_threshold`` 与 ``--diff_top_fraction``）；
 ``--enable_cross_model_diff`` 可额外生成全局单参考 legacy 版图（含 graspnet，非跨族可比）。
 
-Grasp 对齐：优先从 ``dataset_root/scenes/<scene>/label/<ann>.npz`` 读全量 ``grasps`` (N×17)，否则回退离线 npz 的
-``gt_grasp_group``；输出 ``compare_grasp_aligned_featnorm.png`` 与 ``grasp_aligned_featnorm_meta.json``。
+Grasp 对齐：通过 ``graspclutter6dAPI.GraspClutter6D.loadGrasp``（与 ``--camera`` / ``--split`` 一致）加载 GT (N×17)，
+失败时回退离线 npz 的 ``gt_grasp_group``；输出 ``compare_grasp_aligned_featnorm.png`` 与 ``grasp_aligned_featnorm_meta.json``。
 
 ``--global_norm_for_featvis``：L2 与 grasp 对齐图中特征范数色标在已加载模型间共用 min–max（子图标题带 ``[global ||·||]``）。
 """
@@ -504,7 +504,14 @@ def main():
     with open(os.path.join(out_dir, "extraction_log.json"), "w", encoding="utf-8") as f:
         json.dump(logs, f, indent=2, ensure_ascii=False)
 
-    gt_resolved, gt_resolve_meta = resolve_gt_grasps_17d(args.dataset_root, scene_id, ann_id, data)
+    gt_resolved, gt_resolve_meta = resolve_gt_grasps_17d(
+        args.dataset_root,
+        scene_id,
+        ann_id,
+        data,
+        camera=args.camera,
+        split=args.split,
+    )
 
     # 统计
     if feats_np:
@@ -609,72 +616,110 @@ def main():
         )
 
     # Grasp 对齐：逐点距最近 GT 抓取平移；特征范数 turbo + 距离 < 阈值 红色覆盖
+    print("[DEBUG] Enter grasp-aligned branch")
+    print(f"[DEBUG] dataset_root = {args.dataset_root!r}")
+    print(
+        f"[DEBUG] GT source: GraspClutter6D.loadGrasp(sceneId={scene_id}, annId={ann_id}, "
+        f"camera={args.camera!r}, split={args.split!r}) under dataset_root"
+    )
+    print(f"[DEBUG] gt_resolve_meta = {gt_resolve_meta}")
+    print(f"[DEBUG] gt_resolved is None? {gt_resolved is None}")
+    print(
+        f"[DEBUG] gt_resolved shape: "
+        f"{None if gt_resolved is None else getattr(gt_resolved, 'shape', None)}"
+    )
+    print(f"[DEBUG] feats_np keys: {list(feats_np.keys())}")
+    print(f"[DEBUG] feats_l2 keys: {list(feats_l2.keys())}")
+
     grasp_dmin = (
         per_point_min_dist_to_gt_translations(pc_common, gt_resolved)
         if gt_resolved is not None
         else None
     )
-    if grasp_dmin is not None and feats_l2:
-        thr_ga = float(args.grasp_dist_threshold)
-        cap_ga = (
-            f"GT source: {gt_resolve_meta.get('source')}; "
-            f"red: min dist to GT translation [:,13:16] < {thr_ga} m; "
-            f"global_norm_for_featvis={feat_norm_global_range is not None}"
-        )
-        ga_panels: List = []
-        if rgb_img is not None:
-            ga_panels.append(("image", rgb_img, "RGB"))
-        for m in MODEL_PANEL_ORDER:
-            if m in feats_l2:
-                ga_panels.append(
-                    (
-                        "pointcloud_grasp_align",
-                        pc_common,
-                        feats_l2[m],
-                        grasp_dmin,
-                        thr_ga,
-                        _short_model_title(m),
+    print(f"[DEBUG] grasp_dmin is None? {grasp_dmin is None}")
+
+    _gt_empty = gt_resolved is None or (getattr(gt_resolved, "size", 0) == 0)
+    if _gt_empty:
+        print("[WARN] Skip grasp-aligned visualization: GT grasps empty or None")
+    elif not feats_l2:
+        print("[WARN] Skip grasp-aligned visualization: feats_l2 empty (no model norms to plot)")
+    elif grasp_dmin is None:
+        print("[WARN] Skip grasp-aligned visualization: grasp_dmin is None (per_point_min_dist failed)")
+    else:
+        ga_out = os.path.join(out_dir, "compare_grasp_aligned_featnorm.png")
+        meta_out = os.path.join(out_dir, "grasp_aligned_featnorm_meta.json")
+        try:
+            thr_ga = float(args.grasp_dist_threshold)
+            cap_ga = (
+                f"GT source: {gt_resolve_meta.get('source')}; "
+                f"red: min dist to GT translation [:,13:16] < {thr_ga} m; "
+                f"global_norm_for_featvis={feat_norm_global_range is not None}"
+            )
+            ga_panels: List = []
+            if rgb_img is not None:
+                ga_panels.append(("image", rgb_img, "RGB"))
+            for m in MODEL_PANEL_ORDER:
+                if m in feats_l2:
+                    ga_panels.append(
+                        (
+                            "pointcloud_grasp_align",
+                            pc_common,
+                            feats_l2[m],
+                            grasp_dmin,
+                            thr_ga,
+                            _short_model_title(m),
+                        )
                     )
+            if any(p[0] == "pointcloud_grasp_align" for p in ga_panels):
+                print(f"[DEBUG] Saving grasp-aligned figure to: {ga_out}")
+                save_comparison_grid(
+                    ga_panels,
+                    ga_out,
+                    elev=elev,
+                    azim=azim,
+                    layout="rgb_wide_first_row",
+                    feat_norm_global_range=feat_norm_global_range,
+                    suptitle="Grasp-Aligned Feature Norms",
+                    caption=cap_ga,
                 )
-        if any(p[0] == "pointcloud_grasp_align" for p in ga_panels):
-            save_comparison_grid(
-                ga_panels,
-                os.path.join(out_dir, "compare_grasp_aligned_featnorm.png"),
-                elev=elev,
-                azim=azim,
-                layout="rgb_wide_first_row",
-                feat_norm_global_range=feat_norm_global_range,
-                suptitle="Grasp-Aligned Feature Norms",
-                caption=cap_ga,
-            )
-        with open(os.path.join(out_dir, "grasp_aligned_featnorm_meta.json"), "w", encoding="utf-8") as f:
-            json.dump(
-                {
-                    "grasp_dist_threshold_m": thr_ga,
-                    "num_gt_grasps": int(gt_resolved.shape[0]),
-                    "gt_grasp_resolution": gt_resolve_meta,
-                    "gt_translation_indices_in_grasp_row": "13:16",
-                    "per_point_min_dist_to_nearest_gt_translation_m": {
-                        "mean": float(np.mean(grasp_dmin)),
-                        "std": float(np.std(grasp_dmin)),
-                        "frac_points_below_threshold": float(np.mean(grasp_dmin < thr_ga)),
+            else:
+                print(
+                    "[WARN] Skip saving compare_grasp_aligned_featnorm.png: "
+                    "no pointcloud_grasp_align panels (check MODEL_PANEL_ORDER ∩ feats_l2)"
+                )
+            print(f"[DEBUG] Writing grasp meta to: {meta_out}")
+            with open(meta_out, "w", encoding="utf-8") as f:
+                json.dump(
+                    {
+                        "grasp_dist_threshold_m": thr_ga,
+                        "num_gt_grasps": int(gt_resolved.shape[0]),
+                        "gt_grasp_resolution": gt_resolve_meta,
+                        "gt_translation_indices_in_grasp_row": "13:16",
+                        "per_point_min_dist_to_nearest_gt_translation_m": {
+                            "mean": float(np.mean(grasp_dmin)),
+                            "std": float(np.std(grasp_dmin)),
+                            "frac_points_below_threshold": float(np.mean(grasp_dmin < thr_ga)),
+                        },
+                        "feat_norm_color_scale": (
+                            {
+                                "mode": "global_minmax_across_models",
+                                "min": feat_norm_global_range[0],
+                                "max": feat_norm_global_range[1],
+                            }
+                            if feat_norm_global_range is not None
+                            else {"mode": "per_panel_minmax"}
+                        ),
+                        "figure_caption": cap_ga,
+                        "visualization": "turbo = per-point L2 feature norm; red = nearest GT translation distance < threshold",
                     },
-                    "feat_norm_color_scale": (
-                        {
-                            "mode": "global_minmax_across_models",
-                            "min": feat_norm_global_range[0],
-                            "max": feat_norm_global_range[1],
-                        }
-                        if feat_norm_global_range is not None
-                        else {"mode": "per_panel_minmax"}
-                    ),
-                    "figure_caption": cap_ga,
-                    "visualization": "turbo = per-point L2 feature norm; red = nearest GT translation distance < threshold",
-                },
-                f,
-                indent=2,
-                ensure_ascii=False,
-            )
+                    f,
+                    indent=2,
+                    ensure_ascii=False,
+                )
+        except Exception as e:
+            print("[ERROR] Failed to generate grasp-aligned visualization")
+            print(repr(e))
+            raise
 
     pca_panels: List = []
     if rgb_img is not None:

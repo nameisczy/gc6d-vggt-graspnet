@@ -11,48 +11,62 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 
-def load_gt_grasps_from_gc6d_label_npz(
+def map_to_gc6d_split(split: str) -> str:
+    """GraspClutter6D 仅接受 train / test / all；管线里的 val 对应官方 train 划分中的场景。"""
+    if split == "train":
+        return "train"
+    if split == "val":
+        return "train"
+    if split == "test":
+        return "test"
+    return "all"
+
+
+def load_gt_grasps_from_gc6d_api(
     dataset_root: str,
     scene_id: int,
     ann_id: int,
+    *,
+    camera: str,
+    split: str,
 ) -> Tuple[Optional[np.ndarray], str]:
     """
-    从原始 GC6D 目录读取 ``scenes/<sceneId>/label/<annId>.npz`` 中的完整 GT 抓取 (G, 17)。
-
-    优先键名 ``grasps``，其次 ``gt_grasp_group`` / ``gt_grasps`` / ``grasp_group``。
-    若文件不存在，尝试 ``annId`` 的零填充文件名。
-    返回 ``(array or None, 说明字符串)``；平移使用 ``[:, 13:16]`` 由调用方保证。
+    通过 ``graspclutter6dAPI.GraspClutter6D.loadGrasp`` 加载场景标注帧的 GT 抓取 (G, 17)。
+    平移在 ``[:, 13:16]``（与 ``GraspGroup.translations`` 一致）。
     """
     root = os.path.abspath(os.path.expanduser(dataset_root))
     if not os.path.isdir(root):
+        print(f"[DEBUG] load_gt_grasps_from_gc6d_api: dataset_root is not a directory: {root!r}")
         return None, f"dataset_root_not_dir:{root}"
 
-    scene_dir = os.path.join(root, "scenes", f"{int(scene_id):06d}", "label")
-    if not os.path.isdir(scene_dir):
-        return None, f"label_dir_missing:{scene_dir}"
-
-    candidates = [
-        os.path.join(scene_dir, f"{int(ann_id)}.npz"),
-        os.path.join(scene_dir, f"{int(ann_id):06d}.npz"),
-        os.path.join(scene_dir, f"{int(ann_id):04d}.npz"),
-    ]
-    path = next((p for p in candidates if os.path.isfile(p)), None)
-    if path is None:
-        return None, f"label_npz_not_found:tried={candidates[0]}"
+    try:
+        from graspclutter6dAPI import GraspClutter6D
+    except ImportError as e:
+        print(f"[ERROR] graspclutter6dAPI import failed: {e!r}")
+        return None, f"import_error:{e!s}"
 
     try:
-        z = np.load(path, allow_pickle=True)
+        gc6d_split = map_to_gc6d_split(split)
+        print(f"[DEBUG] Using GC6D split: {gc6d_split} (from input split={split})")
+        g = GraspClutter6D(root, camera=camera, split=gc6d_split)
+        grasp_group = g.loadGrasp(
+            sceneId=int(scene_id),
+            annId=int(ann_id),
+            format="6d",
+            camera=camera,
+            fric_coef_thresh=0.2,
+            remove_invisible=True,
+        )
+        gt_grasps = grasp_group.grasp_group_array.astype(np.float32)
+        print(f"[DEBUG] Loaded GT grasps via API: shape={gt_grasps.shape}")
+        if gt_grasps.size == 0 or gt_grasps.shape[0] == 0:
+            return None, "api_empty_grasp_group"
+        if gt_grasps.ndim != 2 or gt_grasps.shape[1] < 16:
+            return None, f"api_bad_shape:{getattr(gt_grasps, 'shape', None)}"
+        return gt_grasps, "ok:GraspClutter6D.loadGrasp"
     except Exception as e:
-        return None, f"label_npz_load_error:{path}:{e!s}"
-
-    for key in ("grasps", "gt_grasp_group", "gt_grasps", "grasp_group"):
-        if key not in z.files:
-            continue
-        g = np.asarray(z[key])
-        if g.ndim == 2 and g.shape[1] >= 16 and g.shape[0] > 0:
-            return g.astype(np.float64), f"ok:{path} key={key} G={g.shape[0]}"
-
-    return None, f"no_grasp_array_in:{path} keys={list(z.files)}"
+        print(f"[ERROR] GraspClutter6D.loadGrasp failed: {e!r}")
+        return None, f"api_error:{e!s}"
 
 
 def resolve_gt_grasps_17d(
@@ -60,23 +74,54 @@ def resolve_gt_grasps_17d(
     scene_id: int,
     ann_id: int,
     offline_npz_data: Any,
+    *,
+    camera: str = "realsense-d415",
+    split: str = "val",
 ) -> Tuple[Optional[np.ndarray], Dict[str, Any]]:
     """
-    优先 ``dataset_root/.../label/<ann>.npz`` 全量 grasp；否则回退离线 npz 的 ``gt_grasp_group``。
+    优先通过 ``GraspClutter6D.loadGrasp`` 从原始 GC6D 根目录加载 GT；失败时回退离线 npz 的 ``gt_grasp_group``。
     ``offline_npz_data`` 为 ``numpy.load`` 返回的对象。
     """
-    meta: Dict[str, Any] = {"source": None}
-    if dataset_root and str(dataset_root).strip():
-        arr, note = load_gt_grasps_from_gc6d_label_npz(dataset_root, scene_id, ann_id)
+    print(f"[DEBUG] resolve_gt_grasps_17d: Trying to load GT grasps for scene={scene_id}, ann={ann_id}")
+    dr = dataset_root if (dataset_root and str(dataset_root).strip()) else None
+    print(f"[DEBUG] resolve_gt_grasps_17d: dataset_root = {dr!r}")
+    _gc6d_split = map_to_gc6d_split(split)
+    print(
+        f"[DEBUG] resolve_gt_grasps_17d: GT via GraspClutter6D.loadGrasp("
+        f"camera={camera!r}, pipeline_split={split!r} -> gc6d_split={_gc6d_split!r}, "
+        f"fric_coef_thresh=0.2, remove_invisible=True)"
+    )
+
+    meta: Dict[str, Any] = {
+        "source": None,
+        "camera": camera,
+        "split": split,
+        "gc6d_api_split": _gc6d_split,
+    }
+    if dr:
+        arr, note = load_gt_grasps_from_gc6d_api(
+            dr, scene_id, ann_id, camera=camera, split=split
+        )
         meta["dataset_attempt"] = note
         if arr is not None:
-            meta["source"] = "dataset_label_npz"
+            meta["source"] = "gc6d_api_loadGrasp"
+            print(f"[DEBUG] resolve_gt_grasps_17d: using API grasps, shape={arr.shape}")
             return arr, meta
-    if "gt_grasp_group" in getattr(offline_npz_data, "files", []):
+        print(f"[DEBUG] resolve_gt_grasps_17d: API load failed or empty: {note!r}")
+
+    off_files = list(getattr(offline_npz_data, "files", []))
+    print(f"[DEBUG] resolve_gt_grasps_17d: offline npz keys: {off_files}")
+    if "gt_grasp_group" in off_files:
         gg = np.asarray(offline_npz_data["gt_grasp_group"])
+        print(f"[DEBUG] resolve_gt_grasps_17d: offline gt_grasp_group raw shape={getattr(gg, 'shape', None)}")
         if gg.size > 0 and gg.ndim == 2 and gg.shape[1] >= 16:
             meta["source"] = "offline_npz_gt_grasp_group"
-            return gg.astype(np.float64), meta
+            out = gg.astype(np.float64)
+            print(f"[WARN] Falling back to offline npz GT grasp, shape={out.shape}")
+            return out, meta
+        print("[WARN] offline npz has gt_grasp_group but empty or wrong ndim/shape; cannot use")
+
+    print("[ERROR] No GT grasps from GraspClutter6D API or offline npz")
     meta["source"] = "none"
     return None, meta
 

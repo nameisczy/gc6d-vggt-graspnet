@@ -24,7 +24,12 @@
       "error": null,
       "diff_rel_epsilon": 1e-08,
       "diff_top_fraction": 0.1,
-      "topk_diff_grasp_overlap_note": "skipped: no GT grasps (dataset label or offline gt_grasp_group)",
+      "topk_diff_grasp_overlap_settings": {
+        "grasp_dist_threshold_m": 0.02,
+        "top_fraction_same_as_diff_mask": 0.1,
+        "definition": "(top-k by abs L2 diff to ref) ∩ (min_dist_to_gt_translation < τ) divided by k",
+        "improvement_vs_random": "overlap / mean_i 1[dist_to_gt(i)<τ]; baseline≈uniform random k points"
+      },
       "per_model": {
         "vggt_raw": {
           "mean_l2_diff": 0.0,
@@ -35,44 +40,92 @@
           "max_rel_diff": 0.0
         },
         "vggt_progressive_alpha05": {
-          "mean_l2_diff": 4.542064792988214,
-          "std_l2_diff": 0.9011437878445326,
-          "max_l2_diff": 7.484192333540311,
-          "mean_rel_diff": 6.89701606544593,
-          "std_rel_diff": 1.3626865719127235,
-          "max_rel_diff": 11.327239652909196,
+          "mean_l2_diff": 4.526368837837974,
+          "std_l2_diff": 0.8917831219289898,
+          "max_l2_diff": 7.401870776102787,
+          "mean_rel_diff": 6.17517279617701,
+          "std_rel_diff": 1.1949503133931694,
+          "max_rel_diff": 10.19373090028711,
           "top_diff_fraction": 0.1,
-          "top_diff_point_count": 205
+          "top_diff_point_count": 205,
+          "topk_diff_grasp_overlap": {
+            "overlap": 0.08292682926829269,
+            "k": 205,
+            "topk_in_grasp_region": 17,
+            "top_fraction": 0.1,
+            "grasp_dist_threshold_m": 0.02,
+            "overlap_random_baseline": 0.03955078125,
+            "improvement_vs_random": 2.0967178560674498,
+            "definition": "|topk_abs_diff ∩ {i : min_dist_to_gt_translation(i) < τ}| / k",
+            "baseline_definition": "mean over points of 1[dist_to_gt < τ]; uniform-random k-subset expectation ≈ baseline",
+            "improvement_definition": "overlap / overlap_random_baseline; >1 means task-aligned vs chance"
+          }
         },
         "vggt_distill": {
-          "mean_l2_diff": 6.355513773417479,
-          "std_l2_diff": 0.6251778137931674,
-          "max_l2_diff": 7.470567133635782,
-          "mean_rel_diff": 9.645933625030715,
-          "std_rel_diff": 0.8875320143066112,
-          "max_rel_diff": 11.242938339277467,
+          "mean_l2_diff": 6.299013056615176,
+          "std_l2_diff": 0.6363191905476177,
+          "max_l2_diff": 7.432824800498433,
+          "mean_rel_diff": 8.592752430847629,
+          "std_rel_diff": 0.801676976339222,
+          "max_rel_diff": 9.966756433120663,
           "top_diff_fraction": 0.1,
-          "top_diff_point_count": 205
+          "top_diff_point_count": 205,
+          "topk_diff_grasp_overlap": {
+            "overlap": 0.0,
+            "k": 205,
+            "topk_in_grasp_region": 0,
+            "top_fraction": 0.1,
+            "grasp_dist_threshold_m": 0.02,
+            "overlap_random_baseline": 0.03955078125,
+            "improvement_vs_random": 0.0,
+            "definition": "|topk_abs_diff ∩ {i : min_dist_to_gt_translation(i) < τ}| / k",
+            "baseline_definition": "mean over points of 1[dist_to_gt < τ]; uniform-random k-subset expectation ≈ baseline",
+            "improvement_definition": "overlap / overlap_random_baseline; >1 means task-aligned vs chance"
+          }
         },
         "vggt_fusion_progressive_alpha05": {
-          "mean_l2_diff": 4.542064792988214,
-          "std_l2_diff": 0.9011437878445326,
-          "max_l2_diff": 7.484192333540311,
-          "mean_rel_diff": 6.89701606544593,
-          "std_rel_diff": 1.3626865719127235,
-          "max_rel_diff": 11.327239652909196,
+          "mean_l2_diff": 4.526368837837974,
+          "std_l2_diff": 0.8917831219289898,
+          "max_l2_diff": 7.401870776102787,
+          "mean_rel_diff": 6.17517279617701,
+          "std_rel_diff": 1.1949503133931694,
+          "max_rel_diff": 10.19373090028711,
           "top_diff_fraction": 0.1,
-          "top_diff_point_count": 205
+          "top_diff_point_count": 205,
+          "topk_diff_grasp_overlap": {
+            "overlap": 0.08292682926829269,
+            "k": 205,
+            "topk_in_grasp_region": 17,
+            "top_fraction": 0.1,
+            "grasp_dist_threshold_m": 0.02,
+            "overlap_random_baseline": 0.03955078125,
+            "improvement_vs_random": 2.0967178560674498,
+            "definition": "|topk_abs_diff ∩ {i : min_dist_to_gt_translation(i) < τ}| / k",
+            "baseline_definition": "mean over points of 1[dist_to_gt < τ]; uniform-random k-subset expectation ≈ baseline",
+            "improvement_definition": "overlap / overlap_random_baseline; >1 means task-aligned vs chance"
+          }
         },
         "vggt_prog_enc_lora": {
-          "mean_l2_diff": 4.542064792988214,
-          "std_l2_diff": 0.9011437878445326,
-          "max_l2_diff": 7.484192333540311,
-          "mean_rel_diff": 6.89701606544593,
-          "std_rel_diff": 1.3626865719127235,
-          "max_rel_diff": 11.327239652909196,
+          "mean_l2_diff": 4.526368837837974,
+          "std_l2_diff": 0.8917831219289898,
+          "max_l2_diff": 7.401870776102787,
+          "mean_rel_diff": 6.17517279617701,
+          "std_rel_diff": 1.1949503133931694,
+          "max_rel_diff": 10.19373090028711,
           "top_diff_fraction": 0.1,
-          "top_diff_point_count": 205
+          "top_diff_point_count": 205,
+          "topk_diff_grasp_overlap": {
+            "overlap": 0.08292682926829269,
+            "k": 205,
+            "topk_in_grasp_region": 17,
+            "top_fraction": 0.1,
+            "grasp_dist_threshold_m": 0.02,
+            "overlap_random_baseline": 0.03955078125,
+            "improvement_vs_random": 2.0967178560674498,
+            "definition": "|topk_abs_diff ∩ {i : min_dist_to_gt_translation(i) < τ}| / k",
+            "baseline_definition": "mean over points of 1[dist_to_gt < τ]; uniform-random k-subset expectation ≈ baseline",
+            "improvement_definition": "overlap / overlap_random_baseline; >1 means task-aligned vs chance"
+          }
         }
       },
       "figure_caption_abs_l2": "abs L2 to ref=vggt_raw; family=vggt; rel ε=1e-08; top_mask=0.1",
@@ -112,7 +165,12 @@
       "error": null,
       "diff_rel_epsilon": 1e-08,
       "diff_top_fraction": 0.1,
-      "topk_diff_grasp_overlap_note": "skipped: no GT grasps (dataset label or offline gt_grasp_group)",
+      "topk_diff_grasp_overlap_settings": {
+        "grasp_dist_threshold_m": 0.02,
+        "top_fraction_same_as_diff_mask": 0.1,
+        "definition": "(top-k by abs L2 diff to ref) ∩ (min_dist_to_gt_translation < τ) divided by k",
+        "improvement_vs_random": "overlap / mean_i 1[dist_to_gt(i)<τ]; baseline≈uniform random k points"
+      },
       "per_model": {
         "lift3d_clip_raw": {
           "mean_l2_diff": 0.0,
@@ -123,14 +181,26 @@
           "max_rel_diff": 0.0
         },
         "lift3d_clip_progressive_alpha05": {
-          "mean_l2_diff": 6.888043645337039,
-          "std_l2_diff": 1.3468128048402492,
-          "max_l2_diff": 11.243107265190929,
-          "mean_rel_diff": 2.002735560010133,
-          "std_rel_diff": 0.40392249165751287,
-          "max_rel_diff": 3.287926533188461,
+          "mean_l2_diff": 7.03446436767869,
+          "std_l2_diff": 1.2919528812444294,
+          "max_l2_diff": 11.392236713978736,
+          "mean_rel_diff": 1.8329884320546417,
+          "std_rel_diff": 0.33948651797764534,
+          "max_rel_diff": 2.9559071715584806,
           "top_diff_fraction": 0.1,
-          "top_diff_point_count": 205
+          "top_diff_point_count": 205,
+          "topk_diff_grasp_overlap": {
+            "overlap": 0.08292682926829269,
+            "k": 205,
+            "topk_in_grasp_region": 17,
+            "top_fraction": 0.1,
+            "grasp_dist_threshold_m": 0.02,
+            "overlap_random_baseline": 0.03955078125,
+            "improvement_vs_random": 2.0967178560674498,
+            "definition": "|topk_abs_diff ∩ {i : min_dist_to_gt_translation(i) < τ}| / k",
+            "baseline_definition": "mean over points of 1[dist_to_gt < τ]; uniform-random k-subset expectation ≈ baseline",
+            "improvement_definition": "overlap / overlap_random_baseline; >1 means task-aligned vs chance"
+          }
         }
       },
       "figure_caption_abs_l2": "abs L2 to ref=lift3d_clip_raw; family=lift3d_clip; rel ε=1e-08; top_mask=0.1",
@@ -170,7 +240,12 @@
       "error": null,
       "diff_rel_epsilon": 1e-08,
       "diff_top_fraction": 0.1,
-      "topk_diff_grasp_overlap_note": "skipped: no GT grasps (dataset label or offline gt_grasp_group)",
+      "topk_diff_grasp_overlap_settings": {
+        "grasp_dist_threshold_m": 0.02,
+        "top_fraction_same_as_diff_mask": 0.1,
+        "definition": "(top-k by abs L2 diff to ref) ∩ (min_dist_to_gt_translation < τ) divided by k",
+        "improvement_vs_random": "overlap / mean_i 1[dist_to_gt(i)<τ]; baseline≈uniform random k points"
+      },
       "per_model": {
         "lift3d_dinov2_raw": {
           "mean_l2_diff": 0.0,
@@ -181,14 +256,26 @@
           "max_rel_diff": 0.0
         },
         "lift3d_dinov2_progressive_alpha05": {
-          "mean_l2_diff": 6.886991889013933,
-          "std_l2_diff": 0.6382352248653945,
-          "max_l2_diff": 9.048835917513749,
-          "mean_rel_diff": 1.2466046045294032,
-          "std_rel_diff": 0.09975363708137026,
-          "max_rel_diff": 1.6771893420068724,
+          "mean_l2_diff": 7.177795415557746,
+          "std_l2_diff": 0.7005819421771055,
+          "max_l2_diff": 9.68648542207805,
+          "mean_rel_diff": 1.2612969779655208,
+          "std_rel_diff": 0.09577480722287711,
+          "max_rel_diff": 1.6350005471494258,
           "top_diff_fraction": 0.1,
-          "top_diff_point_count": 205
+          "top_diff_point_count": 205,
+          "topk_diff_grasp_overlap": {
+            "overlap": 0.1073170731707317,
+            "k": 205,
+            "topk_in_grasp_region": 22,
+            "top_fraction": 0.1,
+            "grasp_dist_threshold_m": 0.02,
+            "overlap_random_baseline": 0.03955078125,
+            "improvement_vs_random": 2.713399578440229,
+            "definition": "|topk_abs_diff ∩ {i : min_dist_to_gt_translation(i) < τ}| / k",
+            "baseline_definition": "mean over points of 1[dist_to_gt < τ]; uniform-random k-subset expectation ≈ baseline",
+            "improvement_definition": "overlap / overlap_random_baseline; >1 means task-aligned vs chance"
+          }
         }
       },
       "figure_caption_abs_l2": "abs L2 to ref=lift3d_dinov2_raw; family=lift3d_dino; rel ε=1e-08; top_mask=0.1",

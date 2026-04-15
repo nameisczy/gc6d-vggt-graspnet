@@ -157,6 +157,10 @@ def compute_train_loss(
     ranking_pos_dist_thresh: float = 0.05,
     ranking_neg_samples_per_pos: int = 3,
     ranking_max_pairs: int = 2048,
+    ranking_quality_thresh: float = 0.02,
+    ranking_gt_top_k: int = 100,
+    ranking_gt_quality_index: int = 3,
+    ranking_neg_sample_strategy: str = "high_baseline",
     reranker_bounded: bool = True,
     reranker_normalize_center: bool = True,
     reranker_extended_features: Optional[bool] = None,
@@ -249,6 +253,10 @@ def compute_train_loss(
             neg_samples_per_pos=ranking_neg_samples_per_pos,
             max_pairs=ranking_max_pairs,
             detach_scalars_for_reranker=detach_scalars,
+            quality_thresh=ranking_quality_thresh,
+            gt_top_k=ranking_gt_top_k,
+            gt_quality_index=ranking_gt_quality_index,
+            neg_sample_strategy=ranking_neg_sample_strategy,
         )
         log: Dict[str, float] = {
             "loss_main": 0.0,
@@ -328,6 +336,10 @@ def evaluate_mean_val_loss(
     ranking_pos_dist_thresh: float = 0.05,
     ranking_neg_samples_per_pos: int = 3,
     ranking_max_pairs: int = 2048,
+    ranking_quality_thresh: float = 0.02,
+    ranking_gt_top_k: int = 100,
+    ranking_gt_quality_index: int = 3,
+    ranking_neg_sample_strategy: str = "high_baseline",
     reranker_bounded: bool = True,
     reranker_normalize_center: bool = True,
     reranker_extended_features: Optional[bool] = None,
@@ -389,6 +401,10 @@ def evaluate_mean_val_loss(
                 neg_samples_per_pos=ranking_neg_samples_per_pos,
                 max_pairs=ranking_max_pairs,
                 detach_scalars_for_reranker=detach_scalars,
+                quality_thresh=ranking_quality_thresh,
+                gt_top_k=ranking_gt_top_k,
+                gt_quality_index=ranking_gt_quality_index,
+                neg_sample_strategy=ranking_neg_sample_strategy,
             )
             total += float(rk_loss.item())
         else:

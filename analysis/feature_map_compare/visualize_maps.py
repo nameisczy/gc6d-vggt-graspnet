@@ -578,6 +578,7 @@ def save_comparison_grid(
         fig.text(0.5, 0.01, caption, ha="center", va="bottom", fontsize=8)
     top = 0.93 if suptitle else 0.98
     bottom = 0.06 if caption else 0.02
-    fig.tight_layout(rect=[0, bottom, 1, top])
+    # 避免 tight_layout 与 suptitle/3D 子图组合的 UserWarning，用手动边距替代
+    pl.subplots_adjust(left=0.0, right=1.0, bottom=bottom, top=top)
     fig.savefig(out_path, dpi=160)
     pl.close(fig)
