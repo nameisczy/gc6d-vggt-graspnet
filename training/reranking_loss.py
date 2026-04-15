@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-Reranker 排序损失：在 top-K 可微候选上，基于与 GT 的近邻关系定义正负样本，pairwise hinge。
-不修改 pred_decode / 碰撞 / dump；仅用于训练循环。
+Reranker 排序损失（baseline-aware、保守）：
+- Top-K **仅**由 baseline（seed score）决定：``torch.topk(baseline, K)``，候选集不因 reranker 改变。
+- 融合（ranking + add）：``final = baseline + lambda * residual``（小 lambda，避免整表重排）。
+- 正样本：在 Top-K 内 **仅** 按 **高 baseline**（前 top_frac）定义，**不**用 GT 距离约束正样本。
+- 可选软约束：若某候选与 GT 平移距离 < 阈值，则对该正样本 hinge 加权略增（仍不强制贴 GT）。
+- 负样本：**难负例** — baseline 排名在 (top 20%, top 60%] 内；忽略最差 40%。
+- 稳定项：``L_total = L_ranking + stability_weight * MSE(final, baseline)``。
+- quality reranker：``final = baseline * sigmoid(residual)``（与 ranking 路径独立）。
 
-GT：先用 quality 阈值过滤，再按该标量降序取 top-K（默认 dim=3，与 17D 中 depth 列一致，可用 ranking_gt_quality_index 覆盖）。
-正样本：最近邻距离 < pos_dist_thresh 且 最近 GT 的 quality > quality_thresh；hinge 按该 GT 的 quality 加权。
-负样本：在 non-positive 候选中优先取 baseline_score 高者（难例）。
-quality reranker：final = baseline * sigmoid(reranker 输出)。
+GT 平移与 eval 一致：``[:, 13:16]``。
 """
 
 from __future__ import annotations
 
 import logging
+import math
 from typing import Optional, Tuple
 
 import torch
@@ -21,8 +25,17 @@ from models.graspnet_adapter import per_seed_soft_scalars_from_end_points
 
 logger = logging.getLogger(__name__)
 
-# 17D: [0]=score [1]=w [2]=height [3]=depth — 默认用 depth 作 GT quality（与 pred 的 tolerance 槽位语义接近，可改）
+# 17D: [0]=score [1]=w [2]=height [3]=depth — 保留旧参数名兼容（当前正/负定义不再用 quality 维）
 DEFAULT_GT_QUALITY_INDEX = 3
+
+# 防止分数漂移：MSE(final, baseline) 权重
+RERANK_STABILITY_WEIGHT = 0.01
+
+# 正样本在「近 GT」时的 hinge 额外权重（仅当 near_gt 时生效；0 表示关闭）
+RANKING_NEAR_GT_SOFT_BONUS = 0.25
+
+# 负样本：baseline 排名在 (pos_top_frac, neg_top_frac] 内（忽略最差 40% 作负例）
+RANKING_NEG_TOP_FRAC_DEFAULT = 0.6
 
 
 def gather_topk_sorted_features(
@@ -53,9 +66,9 @@ def gather_topk_sorted_features(
         width_val = width_val.detach()
         tol_val = tol_val.detach()
 
-    sort_idx = torch.argsort(score_val, dim=1, descending=True)
-    k = min(top_k, score_val.shape[1])
-    idx = sort_idx[:, :k]
+    # 仅用 baseline（seed score）选 Top-K；与 eval 一致，reranker 不改变候选集合
+    k = min(int(top_k), int(score_val.shape[1]))
+    _, idx = torch.topk(score_val, k, dim=-1, largest=True, sorted=True)
     gs = lambda t: torch.gather(t, 1, idx)
 
     center = end_points["fp2_xyz"].float()
@@ -113,17 +126,13 @@ def compute_fused_scores(
     """
     baseline, residual: (B, K)，融合为最终排序分数 (B, K)。
 
+    reranker_type == "ranking" + fusion == "add"（训练默认，保守）：
+      final = baseline + lam * residual（小 lam，与 eval 对齐、避免整表重排）
+
     reranker_type == "quality"：
-      final = baseline * sigmoid(residual)（与 baseline 尺度一致的可学习重加权）
+      final = baseline * sigmoid(residual)
 
-    bounded=True（默认）：
-      br = tanh(residual)，减轻对 baseline 分布的破坏。
-      - ranking + add: baseline + lam * br
-      - ranking + mul: baseline * (1 + lam * br)
-
-    bounded=False（旧行为）：
-      - ranking + add: baseline + lam * residual
-      - ranking + mul: baseline * sigmoid(residual)
+    ranking + mul：仍可用 tanh 有界残差（bounded）或旧式 sigmoid（unbounded）。
     """
     r = residual
     if r.dim() == 3:
@@ -132,6 +141,10 @@ def compute_fused_scores(
 
     if reranker_type == "quality":
         return baseline * torch.sigmoid(r)
+
+    # ranking：add 路径固定为 baseline + lambda * residual（与「小 lambda」保守策略一致）
+    if reranker_type == "ranking" and fusion == "add":
+        return baseline + lam_f * r
 
     if bounded:
         br = torch.tanh(r)
@@ -144,64 +157,54 @@ def compute_fused_scores(
     return baseline * torch.sigmoid(r)
 
 
-def filter_gt_for_ranking(
-    gt_17d: torch.Tensor,
-    *,
-    quality_index: int,
-    quality_thresh: float,
-    gt_top_k: int,
-) -> Tuple[torch.Tensor, torch.Tensor]:
-    """
-    先按 gt_quality > quality_thresh 过滤，再按 quality 降序取前 gt_top_k。
-    返回 (gt_out, valid_gt_mask)，形状 (B, G', 17)、(B, G')。
-    """
-    B, G, _ = gt_17d.shape
-    device = gt_17d.device
-    valid_center = gt_17d[:, :, 13:16].abs().sum(dim=-1) > 1e-5
-    q_all = gt_17d[:, :, quality_index]
-    G_cap = min(G, int(gt_top_k))
-    out = gt_17d.new_zeros(B, G_cap, 17)
-    mask = torch.zeros(B, G_cap, dtype=torch.bool, device=device)
-    for b in range(B):
-        keep = valid_center[b] & (q_all[b] > float(quality_thresh))
-        if not keep.any():
-            continue
-        idx = torch.where(keep)[0]
-        q_sub = q_all[b, idx]
-        order = torch.argsort(q_sub, descending=True)
-        take_n = min(int(gt_top_k), int(idx.numel()))
-        idx_sorted = idx[order[:take_n]]
-        L = int(idx_sorted.numel())
-        out[b, :L] = gt_17d[b, idx_sorted]
-        mask[b, :L] = True
-    return out, mask
-
-
-def _positive_mask_and_weight_from_gt(
+def _baseline_aware_pos_neg_masks(
     pred_center: torch.Tensor,
     gt_17d: torch.Tensor,
-    valid_gt_mask: torch.Tensor,
+    baseline_topk: torch.Tensor,
     pos_dist_thresh: float,
-    quality_thresh: float,
-    quality_index: int,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    *,
+    baseline_top_frac: float = 0.2,
+    neg_top_frac: float = RANKING_NEG_TOP_FRAC_DEFAULT,
+    near_gt_soft_bonus: float = RANKING_NEAR_GT_SOFT_BONUS,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
-    pred_center: (B, K, 3)
-    gt_17d: (B, G, 17)
-    valid_gt_mask: (B, G)
-    正样本：最近邻距离 <= pos_dist_thresh 且 最近 GT 的 quality > quality_thresh。
-    返回 pos_mask (B,K)、pos_weight (B,K)，权重为最近 GT 的 quality（非正为 0）。
+    pred_center: (B, K, 3)，已与 Top-K baseline 候选对齐。
+    baseline_topk: (B, K)，对应位置的 baseline 分数。
+    按 **baseline 排名**（每行按分数降序，rank 0 为最高）：
+    - 正样本：rank < ceil(K * pos_top_frac)（默认 top 20%）
+    - 负样本：pos_top_frac < rank <= neg_top_frac（默认 rank 严格大于 20% 且 <= top 60%），
+      即 **忽略** 排名最差 (1 - neg_top_frac)（默认 40%）作为负例，专注难负例。
+
+    平移 GT [:, 13:16] 仅用于可选 soft 权重（近 GT 略增权），**不**参与正负定义。
+
+    返回 pos_mask (B,K)、neg_mask (B,K)、pos_pair_weight (B,K)：
+    pos_pair_weight 在正样本位置上为 ``1 + bonus``（若 near GT）否则 ``1``。
     """
+    valid_g = gt_17d[:, :, 13:16].abs().sum(dim=-1) > 1e-5
     gt_c = gt_17d[:, :, 13:16]
     d = torch.cdist(pred_center, gt_c)
-    d = d.masked_fill(~valid_gt_mask.unsqueeze(1), float("inf"))
-    d_min, g_star = d.min(dim=-1)
-    g_star = g_star.clamp(0, gt_17d.size(1) - 1)
-    qt = torch.gather(gt_17d[:, :, quality_index], 1, g_star)
-    finite = torch.isfinite(d_min)
-    pos = finite & (d_min <= float(pos_dist_thresh)) & (qt > float(quality_thresh))
-    pos_w = torch.where(pos, qt, torch.zeros_like(qt))
-    return pos, pos_w
+    d = d.masked_fill(~valid_g.unsqueeze(1), float("inf"))
+    d_min, _ = d.min(dim=-1)
+    near_gt = torch.isfinite(d_min) & (d_min <= float(pos_dist_thresh))
+
+    B, K = baseline_topk.shape
+    device = baseline_topk.device
+    sorted_idx = torch.argsort(baseline_topk, dim=-1, descending=True)
+    ranks = torch.arange(K, device=device, dtype=torch.long).view(1, K).expand(B, -1)
+    rank = torch.zeros(B, K, dtype=torch.long, device=device)
+    rank.scatter_(1, sorted_idx, ranks)
+
+    n_pos = max(1, int(math.ceil(float(K) * float(baseline_top_frac))))
+    n_neg_cap = max(n_pos, int(math.ceil(float(K) * float(neg_top_frac))))
+
+    pos_mask = rank < n_pos
+    neg_mask = (rank >= n_pos) & (rank < n_neg_cap)
+
+    bonus = float(near_gt_soft_bonus)
+    pos_pair_weight = torch.ones_like(baseline_topk, dtype=baseline_topk.dtype)
+    if bonus > 0.0:
+        pos_pair_weight = pos_pair_weight + bonus * (pos_mask & near_gt).to(dtype=baseline_topk.dtype)
+    return pos_mask, neg_mask, pos_pair_weight
 
 
 def _zero_ranking_loss_with_grad(final_score: torch.Tensor, reranker: Optional[torch.nn.Module]) -> torch.Tensor:
@@ -222,21 +225,19 @@ def _zero_ranking_loss_with_grad(final_score: torch.Tensor, reranker: Optional[t
 def pairwise_ranking_hinge_loss(
     final_score: torch.Tensor,
     pos_mask: torch.Tensor,
+    neg_mask: torch.Tensor,
     *,
-    pos_weight: Optional[torch.Tensor] = None,
-    baseline_score: Optional[torch.Tensor] = None,
-    neg_sample_strategy: str = "high_baseline",
-    margin: float = 0.1,
-    neg_samples_per_pos: int = 3,
+    pos_pair_weight: Optional[torch.Tensor] = None,
+    margin: float = 0.05,
+    neg_samples_per_pos: int = 5,
     max_pairs: int = 2048,
     reranker: Optional[torch.nn.Module] = None,
 ) -> torch.Tensor:
     """
     final_score: (B, K)
-    pos_mask: (B, K) bool
-    pos_weight: (B, K) 可选，与 hinge 相乘（通常取最近 GT 的 quality）
-    baseline_score: (B, K) 可选，neg_sample_strategy=high_baseline 时用于挑选高分负样本
-    对每个 (batch, pos, neg) 采样：L = w_pos * relu(margin - (s_pos - s_neg))
+    pos_mask / neg_mask: (B, K) bool，负样本仅在 neg_mask 为 True 的下标上采样。
+    pos_pair_weight: (B, K) 可选，对正样本侧 hinge 加权（默认全 1）。
+    L = w_pos * relu(margin - (s_pos - s_neg))
     """
     device = final_score.device
     B, K = final_score.shape
@@ -247,24 +248,20 @@ def pairwise_ranking_hinge_loss(
 
     for b in range(B):
         pos_idx = torch.where(pos_mask[b])[0]
-        neg_idx = torch.where(~pos_mask[b])[0]
+        neg_idx = torch.where(neg_mask[b])[0]
         if pos_idx.numel() == 0 or neg_idx.numel() == 0:
             continue
         n_neg = min(neg_samples_per_pos, int(neg_idx.numel()))
         for pi in pos_idx:
             sp = final_score[b, pi]
-            w_pi = pos_weight[b, pi] if pos_weight is not None else final_score.new_tensor(1.0)
+            w_pi = (
+                pos_pair_weight[b, pi]
+                if pos_pair_weight is not None
+                else final_score.new_tensor(1.0)
+            )
             if n_neg <= 0:
                 continue
-            if (
-                neg_sample_strategy == "high_baseline"
-                and baseline_score is not None
-            ):
-                scores = baseline_score[b, neg_idx]
-                order = torch.argsort(scores, descending=True)
-                choice = neg_idx[order[:n_neg]]
-            else:
-                choice = neg_idx[torch.randperm(neg_idx.numel(), device=device)[:n_neg]]
+            choice = neg_idx[torch.randperm(neg_idx.numel(), device=device)[:n_neg]]
             for nj in choice:
                 sn = final_score[b, nj]
                 total_loss = total_loss + w_pi * F.relu(float(margin) - (sp - sn))
@@ -282,15 +279,15 @@ def reranker_ranking_loss_from_endpoints(
     reranker: torch.nn.Module,
     *,
     top_k: int = 50,
-    margin: float = 0.1,
+    margin: float = 0.05,
     reranker_type: str = "ranking",
     fusion: str = "add",
-    lam: float = 0.1,
+    lam: float = 0.01,
     bounded: bool = True,
     extended_features: Optional[bool] = None,
     normalize_center_by_scene: bool = True,
     pos_dist_thresh: float = 0.05,
-    neg_samples_per_pos: int = 3,
+    neg_samples_per_pos: int = 5,
     max_pairs: int = 2048,
     detach_scalars_for_reranker: bool = False,
     valid_gt_mask: Optional[torch.Tensor] = None,
@@ -298,6 +295,10 @@ def reranker_ranking_loss_from_endpoints(
     gt_top_k: int = 100,
     gt_quality_index: int = DEFAULT_GT_QUALITY_INDEX,
     neg_sample_strategy: str = "high_baseline",
+    ranking_baseline_top_frac: float = 0.2,
+    ranking_neg_top_frac: float = RANKING_NEG_TOP_FRAC_DEFAULT,
+    ranking_near_gt_soft_bonus: float = RANKING_NEAR_GT_SOFT_BONUS,
+    stability_weight: float = RERANK_STABILITY_WEIGHT,
 ) -> Tuple[torch.Tensor, dict]:
     """
     完整 reranker 排序损失。返回 (loss, log_dict)。
@@ -311,14 +312,6 @@ def reranker_ranking_loss_from_endpoints(
         extended_features = False
     if extended_features and in_dim < 9:
         raise ValueError("extended_features=True 需要 ResidualReranker(in_dim>=9)")
-
-    gt_work, valid_gt = filter_gt_for_ranking(
-        gt_17d,
-        quality_index=int(gt_quality_index),
-        quality_thresh=float(quality_thresh),
-        gt_top_k=int(gt_top_k),
-    )
-    _ = valid_gt_mask  # 保留旧参数；正样本/GT 掩码由 filter_gt_for_ranking 与 valid_gt 决定
 
     feat, pred_center_raw, _ = gather_topk_sorted_features(
         end_points,
@@ -346,28 +339,31 @@ def reranker_ranking_loss_from_endpoints(
         lam=lam,
         bounded=bounded,
     )
-    pos_mask, pos_w = _positive_mask_and_weight_from_gt(
+    pos_mask, neg_mask, pos_pair_weight = _baseline_aware_pos_neg_masks(
         pred_center_raw,
-        gt_work,
-        valid_gt,
+        gt_17d,
+        baseline,
         pos_dist_thresh,
-        quality_thresh,
-        int(gt_quality_index),
+        baseline_top_frac=float(ranking_baseline_top_frac),
+        neg_top_frac=float(ranking_neg_top_frac),
+        near_gt_soft_bonus=float(ranking_near_gt_soft_bonus),
     )
-    loss = pairwise_ranking_hinge_loss(
+    loss_rank = pairwise_ranking_hinge_loss(
         final_score,
         pos_mask,
-        pos_weight=pos_w,
-        baseline_score=baseline,
-        neg_sample_strategy=neg_sample_strategy,
+        neg_mask,
+        pos_pair_weight=pos_pair_weight,
         margin=margin,
         neg_samples_per_pos=neg_samples_per_pos,
         max_pairs=max_pairs,
         reranker=reranker,
     )
+    loss_stab = F.mse_loss(final_score, baseline)
+    loss = loss_rank + float(stability_weight) * loss_stab
     n_pos = int(pos_mask.sum().item())
     log = {
-        "loss_ranking": float(loss.detach().item()),
+        "loss_ranking": float(loss_rank.detach().item()),
+        "loss_ranking_stability": float(loss_stab.detach().item()),
         "ranking_pos_count": float(n_pos),
     }
     return loss, log

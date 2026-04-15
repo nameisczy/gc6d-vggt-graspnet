@@ -11,7 +11,7 @@
   "graspnet_root": "/home/ziyaochen/graspnet-baseline",
   "val_split": "val",
   "val_every": 1,
-  "output_dir": "runs/residual_rerank",
+  "output_dir": "/home/ziyaochen/gc6d_grasp_pipeline/runs/residual_rerank/exp_ranking_q02_k100",
   "out_dir": null,
   "experiment_mode": "reranker_only",
   "loss_type": "ranking",
@@ -22,14 +22,14 @@
   "reranker_enabled": false,
   "reranker_type": "ranking",
   "reranker_fusion": "add",
-  "reranker_lambda": 0.01,
+  "reranker_lambda": 0.1,
   "reranker_unbounded": false,
   "reranker_3d_only": false,
   "no_normalize_reranker_center": false,
-  "ranking_margin": 0.05,
+  "ranking_margin": 0.1,
   "ranking_top_k": 50,
   "ranking_pos_dist_thresh": 0.05,
-  "ranking_neg_samples_per_pos": 5,
+  "ranking_neg_samples_per_pos": 3,
   "ranking_max_pairs": 2048,
   "ranking_quality_thresh": 0.02,
   "ranking_gt_top_k": 100,
@@ -39,5 +39,5 @@
   "loss_alpha": 0.7,
   "best_gt_weight": 0.3,
   "loss_pred2gt_agg": "min",
-  "timestamp": "2026-04-15T11:51:28.476323Z"
+  "timestamp": "2026-04-15T06:21:10.389363Z"
 }

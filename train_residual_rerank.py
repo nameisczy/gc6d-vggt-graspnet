@@ -74,7 +74,13 @@ def parse_args():
     p.add_argument("--graspnet_root", type=str, default=os.path.expanduser("~/graspnet-baseline"))
     p.add_argument("--val_split", type=str, default="val")
     p.add_argument("--val_every", type=int, default=1)
-    p.add_argument("--out_dir", type=str, default="runs/residual_rerank")
+    p.add_argument(
+        "--output_dir",
+        type=str,
+        default="runs/residual_rerank",
+        help="Directory to save checkpoints and logs",
+    )
+    p.add_argument("--out_dir", type=str, default=None)
     p.add_argument("--experiment_mode", type=str, default="lora_reranker", choices=(
         "baseline", "lora_only", "reranker_only", "lora_reranker",
     ))
@@ -86,7 +92,7 @@ def parse_args():
     p.add_argument("--reranker_enabled", action="store_true", default=False)
     p.add_argument("--reranker_type", type=str, default="ranking", choices=("ranking", "quality"))
     p.add_argument("--reranker_fusion", type=str, default="add", choices=("add", "mul"))
-    p.add_argument("--reranker_lambda", type=float, default=0.1)
+    p.add_argument("--reranker_lambda", type=float, default=0.01)
     p.add_argument(
         "--reranker_unbounded",
         action="store_true",
@@ -105,10 +111,10 @@ def parse_args():
         default=False,
         help="9 维模式下不对 grasp 中心做场景尺度归一化",
     )
-    p.add_argument("--ranking_margin", type=float, default=0.1)
+    p.add_argument("--ranking_margin", type=float, default=0.05)
     p.add_argument("--ranking_top_k", type=int, default=50)
     p.add_argument("--ranking_pos_dist_thresh", type=float, default=0.05)
-    p.add_argument("--ranking_neg_samples_per_pos", type=int, default=3)
+    p.add_argument("--ranking_neg_samples_per_pos", type=int, default=5)
     p.add_argument("--ranking_max_pairs", type=int, default=2048)
     p.add_argument(
         "--ranking_quality_thresh",
@@ -176,6 +182,8 @@ def _apply_experiment_mode(model: torch.nn.Module, mode: str) -> None:
 
 def main():
     args = parse_args()
+    if args.out_dir is not None:
+        args.output_dir = args.out_dir
     _setup_logging()
     torch.manual_seed(args.seed)
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
@@ -220,7 +228,7 @@ def main():
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, collate_fn=collate_gc6d)
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, collate_fn=collate_gc6d)
 
-    os.makedirs(args.out_dir, exist_ok=True)
+    os.makedirs(args.output_dir, exist_ok=True)
     meta = vars(args).copy()
     meta["timestamp"] = datetime.utcnow().isoformat() + "Z"
 
@@ -313,11 +321,12 @@ def main():
             )
             logging.info("epoch %d val loss=%.6f", epoch, val_loss)
 
-    ckpt_path = os.path.join(args.out_dir, "last.pt")
-    _save_checkpoint(ckpt_path, model, meta)
-    with open(os.path.join(args.out_dir, "meta.json"), "w", encoding="utf-8") as f:
+    os.makedirs(args.output_dir, exist_ok=True)
+    save_path = os.path.join(args.output_dir, "last.pt")
+    _save_checkpoint(save_path, model, meta)
+    with open(os.path.join(args.output_dir, "meta.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2, ensure_ascii=False)
-    logging.info("saved %s", ckpt_path)
+    logging.info("saved %s", save_path)
 
 
 if __name__ == "__main__":
